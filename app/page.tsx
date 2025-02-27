@@ -33,8 +33,11 @@ export default function Home() {
       const data = await parseINPFile(file);
       console.log(data);
       if (data?.originalContent) {
-        console.log(toGeoJson(data?.originalContent));
+        const modelGeojson = toGeoJson(data?.originalContent);
+        console.log(modelGeojson.geojson);
+        setMapData(modelGeojson.geojson);
       }
+
       setNetworkData(data);
 
       // Clear map data if no file is selected

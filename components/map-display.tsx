@@ -76,10 +76,10 @@ export function MapDisplay({ geoJSON }: MapDisplayProps) {
       id: "network-lines",
       type: "line",
       source: "network",
-      filter: ["==", ["get", "type"], "pipe"],
+      filter: ["==", ["get", "type"], "Link"],
       paint: {
         "line-color": "#3b82f6",
-        "line-width": 2,
+        "line-width": ["interpolate", ["linear"], ["zoom"], 12, 0.5, 16, 4],
       },
     });
 
@@ -88,13 +88,22 @@ export function MapDisplay({ geoJSON }: MapDisplayProps) {
       id: "network-points",
       type: "circle",
       source: "network",
-      filter: ["==", ["get", "type"], "junction"],
+      filter: ["==", ["get", "type"], "Node"],
       paint: {
-        "circle-radius": 6,
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 12, 0.5, 16, 5],
         "circle-color": "#3b82f6",
-        "circle-stroke-width": 2,
+        "circle-stroke-width": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          13,
+          0.5,
+          16,
+          1,
+        ],
         "circle-stroke-color": "#ffffff",
       },
+      minzoom: 13,
     });
 
     // Fit bounds to the network
@@ -146,7 +155,7 @@ export function MapDisplay({ geoJSON }: MapDisplayProps) {
             </div>
           </div>
         ) : (
-          <div ref={mapContainer} className="absolute inset-0" />
+          <div ref={mapContainer} className="absolute inset-0 h-full w-full" />
         )}
       </div>
 
