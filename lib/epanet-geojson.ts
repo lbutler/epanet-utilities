@@ -1,10 +1,4 @@
-import {
-  FeatureCollection,
-  Feature,
-  Geometry,
-  Point,
-  LineString,
-} from "geojson";
+import { FeatureCollection, Feature, Point, LineString } from "geojson";
 
 /******************************************************
  * INTERFACES & TYPES
@@ -41,6 +35,7 @@ interface NodeProperties {
   type: "Node";
   category: "Junction" | "Tank" | "Reservior";
   id: string;
+  comment?: string; // We'll store the parsed comment here
 }
 
 /** Base Link property shape */
@@ -50,6 +45,7 @@ interface LinkProperties {
   id: string;
   usNodeId: string;
   dsNodeId: string;
+  comment?: string; // We'll store the parsed comment here
 }
 
 /****************************************
@@ -106,7 +102,7 @@ export interface Pipe extends Feature<LineString, PipeProperties> {
   properties: PipeProperties;
 }
 
-type ValveType = "PRV" | "PSV" | "PBV" | "FCV" | "TCV" | "GPV";
+export type ValveType = "PRV" | "PSV" | "PBV" | "FCV" | "TCV" | "GPV";
 
 export interface ValveProperties extends LinkProperties {
   category: "Valve";
@@ -185,8 +181,8 @@ export function toGeoJson(inpFile: string): ToGeoJsonResult {
     return parseLine(acc, line, index + 1); // +1 for human-friendly line numbering
   }, epanetData);
 
-  // Build final geometries for links:
-  // place upstream node coordinate, optional bends (VERTICES), then downstream node coordinate
+  // After we've parsed everything, build final link geometries:
+  // place upstream node coordinate, any bend coordinates, then downstream node coordinate
   const linkFeatures = Object.keys(finalData.links).map((linkId) => {
     const link = finalData.links[linkId];
     const { usNodeId, dsNodeId } = link.properties;
@@ -205,7 +201,6 @@ export function toGeoJson(inpFile: string): ToGeoJsonResult {
 
     const usCoords = usNode.geometry.coordinates;
     const dsCoords = dsNode.geometry.coordinates;
-    // The link might have some "bend" coordinates from [VERTICES]
     const midCoords = link.geometry.coordinates;
     const finalCoords = [usCoords, ...midCoords, dsCoords];
 
@@ -221,6 +216,11 @@ export function toGeoJson(inpFile: string): ToGeoJsonResult {
   // Combine node features and link features
   const nodeFeatures = Object.values(finalData.nodes);
   const features = [...nodeFeatures, ...linkFeatures];
+
+  // If no nodes or links were found, throw
+  if (finalData.linkIndex === 0 && finalData.nodeIndex === 0) {
+    addError(finalData, 0, "Reading INP failed: no links or nodes found.");
+  }
 
   // Final output
   const geojson: EpanetGeoJSON = {
@@ -243,8 +243,18 @@ function parseLine(
   rawLine: string,
   lineNumber: number
 ): EpanetData {
-  // Remove comments: anything after ';'
+  // Extract comment: anything after ';'
   const commentIndex = rawLine.indexOf(";");
+  let comment = "";
+  if (commentIndex !== -1) {
+    // take substring after ';' (remove possible newline chars)
+    comment = rawLine
+      .substring(commentIndex + 1)
+      .replace(/(\r\n|\n|\r)/gm, "")
+      .trim();
+  }
+
+  // We'll parse the main line content up to the comment
   const lineContent = (
     commentIndex === -1 ? rawLine : rawLine.slice(0, commentIndex)
   )
@@ -267,17 +277,17 @@ function parseLine(
   // Switch by current [SECTION]
   switch (data.currentFunction.toUpperCase()) {
     case "[JUNCTIONS]":
-      return parseJunction(data, lineContent, lineNumber);
+      return parseJunction(data, lineContent, lineNumber, comment);
     case "[RESERVOIRS]":
-      return parseReservoir(data, lineContent, lineNumber);
+      return parseReservoir(data, lineContent, lineNumber, comment);
     case "[TANKS]":
-      return parseTank(data, lineContent, lineNumber);
+      return parseTank(data, lineContent, lineNumber, comment);
     case "[PIPES]":
-      return parsePipe(data, lineContent, lineNumber);
+      return parsePipe(data, lineContent, lineNumber, comment);
     case "[VALVES]":
-      return parseValve(data, lineContent, lineNumber);
+      return parseValve(data, lineContent, lineNumber, comment);
     case "[PUMPS]":
-      return parsePump(data, lineContent, lineNumber);
+      return parsePump(data, lineContent, lineNumber, comment);
     case "[COORDINATES]":
       return parseCoordinates(data, lineContent, lineNumber);
     case "[VERTICES]":
@@ -316,7 +326,8 @@ function addError(data: EpanetData, line: number, message: string) {
 function parseJunction(
   data: EpanetData,
   line: string,
-  lineNumber: number
+  lineNumber: number,
+  comment: string
 ): EpanetData {
   const tokens = line.split(" ");
   if (tokens.length < 2) {
@@ -365,6 +376,7 @@ function parseJunction(
       elevation,
       demand,
       pattern: patternStr,
+      comment,
     },
   };
 
@@ -380,7 +392,8 @@ function parseJunction(
 function parseReservoir(
   data: EpanetData,
   line: string,
-  lineNumber: number
+  lineNumber: number,
+  comment: string
 ): EpanetData {
   const tokens = line.split(" ");
   if (tokens.length < 2) {
@@ -410,6 +423,7 @@ function parseReservoir(
       id,
       head,
       pattern: patternStr,
+      comment,
     },
   };
 
@@ -425,7 +439,8 @@ function parseReservoir(
 function parseTank(
   data: EpanetData,
   line: string,
-  lineNumber: number
+  lineNumber: number,
+  comment: string
 ): EpanetData {
   const tokens = line.split(" ");
   if (tokens.length < 7) {
@@ -484,6 +499,7 @@ function parseTank(
       minVolume,
       volCurve: volCurve || "",
       overflow: overflowStr?.toLowerCase() === "true",
+      comment,
     },
   };
 
@@ -499,7 +515,8 @@ function parseTank(
 function parsePipe(
   data: EpanetData,
   line: string,
-  lineNumber: number
+  lineNumber: number,
+  comment: string
 ): EpanetData {
   const tokens = line.split(" ");
   if (tokens.length < 6) {
@@ -552,6 +569,7 @@ function parsePipe(
       roughness: isNaN(roughVal) ? 0 : roughVal,
       minorLoss: isNaN(minorVal) ? 0 : minorVal,
       status,
+      comment,
     },
   };
 
@@ -561,26 +579,39 @@ function parsePipe(
 }
 
 /** [VALVES]
- * Format (commonly simplified):
- *  ID  UsNode  DsNode  (others)
+ * Format (typical):
+ *  ID  UsNode  DsNode  Diameter  ValveType  Setting  MinorLoss
  */
 function parseValve(
   data: EpanetData,
   line: string,
-  lineNumber: number
+  lineNumber: number,
+  comment: string
 ): EpanetData {
   const tokens = line.split(" ");
-  if (tokens.length < 3) {
+  if (tokens.length < 7) {
     addError(
       data,
       lineNumber,
-      `Valve requires at least 3 columns. Got: "${line}"`
+      `Valve requires at least 7 columns (ID, UsNode, DsNode, Diameter, Type, Setting, MinorLoss). Got: "${line}"`
     );
     return data;
   }
-  const [id, usNodeId, dsNodeId] = tokens;
 
-  // Simplified defaults
+  const [
+    id,
+    usNodeId,
+    dsNodeId,
+    diameterStr,
+    valveTypeStr,
+    settingStr,
+    minorLossStr,
+  ] = tokens;
+
+  const diameterVal = parseFloat(diameterStr);
+  const settingVal = parseFloat(settingStr);
+  const minorLossVal = parseFloat(minorLossStr);
+
   const valve: Valve = {
     type: "Feature",
     id: data.linkIndex,
@@ -594,10 +625,11 @@ function parseValve(
       id,
       usNodeId,
       dsNodeId,
-      diameter: 100,
-      valveType: "TCV",
-      setting: 100,
-      minorLoss: 0,
+      diameter: isNaN(diameterVal) ? 0 : diameterVal,
+      valveType: valveTypeStr as ValveType,
+      setting: isNaN(settingVal) ? 0 : settingVal,
+      minorLoss: isNaN(minorLossVal) ? 0 : minorLossVal,
+      comment,
     },
   };
 
@@ -606,27 +638,142 @@ function parseValve(
   return data;
 }
 
+/** For parsing Pump lines with flexible KEY=VALUE approach */
+interface PumpKeyValues {
+  [x: string | number | symbol]: unknown;
+  head: string | undefined;
+  power: number | undefined;
+  speed: number | undefined;
+  pattern: string | undefined;
+}
+
 /** [PUMPS]
- * Format (commonly simplified):
- *  ID  UsNode  DsNode  (others)
+ * Example lines:
+ *   Pump2 N121 N55 HEAD Curve1 SPEED 1.2 PATTERN 1 POWER 2.0
+ * We interpret the token sequence:
+ *   [id, usNodeId, dsNodeId, key1, val1, key2, val2, key3, val3, key4, val4]
  */
 function parsePump(
   data: EpanetData,
   line: string,
-  lineNumber: number
+  lineNumber: number,
+  comment: string
 ): EpanetData {
   const tokens = line.split(" ");
+  // Minimal columns for ID, USNode, DSNode is 3 tokens.
+  // Then we can have up to 4 pairs of (key, val), making up to 11 total.
+  // You can adjust these rules as needed.
   if (tokens.length < 3) {
     addError(
       data,
       lineNumber,
-      `Pump requires at least 3 columns. Got: "${line}"`
+      `Pump requires at least (ID, UsNode, DsNode). Got: "${line}"`
     );
     return data;
   }
-  const [id, usNodeId, dsNodeId] = tokens;
 
-  // Example default: "Power" pump with power=2, speed=1, pattern="dummy"
+  // We won't enforce a strict upper bound if you want to allow more pairs,
+  // but let's at least handle up to 11 to match your example.
+  const [
+    id,
+    usNodeId,
+    dsNodeId,
+    key1,
+    value1,
+    key2,
+    value2,
+    key3,
+    value3,
+    key4,
+    value4,
+  ] = tokens;
+
+  // We'll accumulate keys into a PumpKeyValues object
+  const kv: PumpKeyValues = {
+    head: undefined,
+    power: undefined,
+    speed: undefined,
+    pattern: undefined,
+  };
+
+  // Helper function to store key/val in the kv object
+  function addKeyVal(k?: string, v?: string) {
+    if (!k) return;
+    // e.g., if k = "HEAD", we do kv["head"] = v
+    const lower = k.toLowerCase();
+    if (lower === "head") {
+      kv.head = v;
+    } else if (lower === "power") {
+      // parse as float
+      const floatVal = parseFloat(v || "");
+      kv.power = isNaN(floatVal) ? undefined : floatVal;
+    } else if (lower === "speed") {
+      const floatVal = parseFloat(v || "");
+      kv.speed = isNaN(floatVal) ? undefined : floatVal;
+    } else if (lower === "pattern") {
+      kv.pattern = v;
+    } else {
+      // store any unknown key if needed
+      kv[lower] = v;
+    }
+  }
+
+  // Attach up to four possible pairs
+  addKeyVal(key1, value1);
+  addKeyVal(key2, value2);
+  addKeyVal(key3, value3);
+  addKeyVal(key4, value4);
+
+  // Now decide if it's a Power or Head pump based on what's provided
+  // We'll default to "Power" if we see a `power`, otherwise "Head" if we see a `head`.
+  let pumpProps: PumpProperties;
+  if (kv.power !== undefined) {
+    pumpProps = {
+      type: "Link",
+      category: "Pump",
+      id,
+      usNodeId,
+      dsNodeId,
+      mode: "Power",
+      power: kv.power,
+      speed: kv.speed,
+      pattern: kv.pattern,
+      comment,
+    };
+  } else if (kv.head !== undefined) {
+    pumpProps = {
+      type: "Link",
+      category: "Pump",
+      id,
+      usNodeId,
+      dsNodeId,
+      mode: "Head",
+      head: kv.head,
+      speed: kv.speed,
+      pattern: kv.pattern,
+      comment,
+    };
+  } else {
+    // If neither 'power' nor 'head' is found, we might default to "Power" with no power?
+    addError(
+      data,
+      lineNumber,
+      `PUMP line missing HEAD or POWER specification. Defaulting to Power=0. Line: "${line}"`
+    );
+    pumpProps = {
+      type: "Link",
+      category: "Pump",
+      id,
+      usNodeId,
+      dsNodeId,
+      mode: "Power",
+      power: 0,
+      speed: kv.speed,
+      pattern: kv.pattern,
+      comment,
+    };
+  }
+
   const pump: Pump = {
     type: "Feature",
     id: data.linkIndex,
@@ -634,17 +781,7 @@ function parsePump(
       type: "LineString",
       coordinates: [],
     },
-    properties: {
-      type: "Link",
-      category: "Pump",
-      id,
-      usNodeId,
-      dsNodeId,
-      mode: "Power",
-      power: 2,
-      speed: 1,
-      pattern: "dummy",
-    } as PowerPumpProperties,
+    properties: pumpProps,
   };
 
   data.links[id] = pump;

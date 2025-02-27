@@ -17,6 +17,8 @@ import {
   generateNewINP,
 } from "@/lib/network-utils";
 
+import { toGeoJson } from "@/lib/epanet-geojson";
+
 export default function Home() {
   const [networkData, setNetworkData] = useState<NetworkData | null>(null);
   const [sourceProjection, setSourceProjection] = useState<string>("");
@@ -30,6 +32,9 @@ export default function Home() {
     try {
       const data = await parseINPFile(file);
       console.log(data);
+      if (data?.originalContent) {
+        console.log(toGeoJson(data?.originalContent));
+      }
       setNetworkData(data);
 
       // Clear map data if no file is selected
