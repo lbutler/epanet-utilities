@@ -17,6 +17,9 @@ import {
   generateNewINP,
 } from "@/lib/network-utils";
 
+import { isLikelyLatLng } from "@/lib/check-projection";
+import { approximateReprojectToLatLng } from "@/lib/approx-reproject";
+
 import { toGeoJson } from "@/lib/epanet-geojson";
 
 export default function Home() {
@@ -34,8 +37,16 @@ export default function Home() {
       console.log(data);
       if (data?.originalContent) {
         const modelGeojson = toGeoJson(data?.originalContent);
+        if (isLikelyLatLng(modelGeojson.geojson)) {
+          setMapData(modelGeojson.geojson);
+        } else {
+          const approxGeojson = approximateReprojectToLatLng(
+            modelGeojson.geojson
+          );
+          setMapData(approxGeojson);
+        }
+
         console.log(modelGeojson.geojson);
-        setMapData(modelGeojson.geojson);
       }
 
       setNetworkData(data);

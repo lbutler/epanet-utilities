@@ -30,7 +30,7 @@ export function MapDisplay({ geoJSON }: MapDisplayProps) {
 
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
-        style: "mapbox://styles/mapbox/streets-v12",
+        style: "mapbox://styles/mapbox/light-v11",
         center: [-122.4194, 37.7749], // San Francisco
         zoom: 12,
       });
