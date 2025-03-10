@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FileUploader } from "@/components/file-uploader";
 import { ProjectionConverter } from "@/components/projection-converter";
 import { MapDisplay } from "@/components/map-display";
@@ -8,6 +8,7 @@ import type {
   Coordinate,
   NetworkData,
   GeoJSONFeatureCollection,
+  Projection,
 } from "@/lib/types";
 import {
   parseINPFile,
@@ -30,6 +31,24 @@ export default function Home() {
     Coordinate[] | null
   >(null);
   const [mapData, setMapData] = useState<GeoJSONFeatureCollection | null>(null);
+  const [projections, setProjections] = useState<Projection[]>([]);
+  const [loadingProjections, setLoadingProjections] = useState<boolean>(true);
+
+  useEffect(() => {
+    let ignore = false;
+    fetch("/projections.json")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!ignore) {
+          setProjections(data);
+        }
+      })
+      .catch((err) => console.error("Failed to load projection data:", err))
+      .finally(() => setLoadingProjections(false));
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   const handleFileLoaded = async (file: File | null) => {
     try {
@@ -73,6 +92,7 @@ export default function Home() {
   };
 
   const handleSourceProjectionChange = (projection: string) => {
+    console.log(projection);
     setSourceProjection(projection);
 
     if (networkData) {
@@ -145,6 +165,8 @@ export default function Home() {
                 onDownload={handleDownload}
                 canConvert={!!networkData}
                 hasConverted={!!convertedCoordinates}
+                projections={projections}
+                loadingProjections={loadingProjections}
               />
             </div>
           </div>

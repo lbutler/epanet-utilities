@@ -21,6 +21,8 @@ interface ProjectionInputProps {
   label: string;
   placeholder?: string;
   defaultMethod?: ProjectionInputMethod;
+  projections: Projection[];
+  loading: boolean;
 }
 
 export function ProjectionInput({
@@ -29,41 +31,41 @@ export function ProjectionInput({
   label,
   placeholder = "Search projections...",
   defaultMethod = "search",
+  projections,
+  loading,
 }: ProjectionInputProps) {
   const [open, setOpen] = React.useState(false);
   const [method, setMethod] =
     React.useState<ProjectionInputMethod>(defaultMethod);
-  const [loading, setLoading] = React.useState(false);
   const [items, setItems] = React.useState<Projection[]>([]);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [manualInput, setManualInput] = React.useState("");
   const [prjFile, setPrjFile] = React.useState<File | null>(null);
-  const searchTimeoutRef = React.useRef<NodeJS.Timeout>();
+  const inputRef = React.useRef<HTMLInputElement | null>(null);
 
   // Handle projection search
   React.useEffect(() => {
     if (!searchQuery) {
-      setItems([]);
+      // if no query, show nothing or show all, whichever you prefer
+      setItems([
+        {
+          id: "EPSG:4326",
+          name: "WGS 84",
+          code: "+proj=longlat +datum=WGS84 +no_defs",
+        },
+      ]);
       return;
     }
-
-    clearTimeout(searchTimeoutRef.current);
-    searchTimeoutRef.current = setTimeout(async () => {
-      setLoading(true);
-      try {
-        const params = new URLSearchParams({ q: searchQuery });
-        const res = await fetch(`/api/projections?${params}`);
-        const data = await res.json();
-        setItems(data.items);
-      } catch (error) {
-        console.error("Failed to fetch projections:", error);
-      } finally {
-        setLoading(false);
-      }
-    }, 300);
-
-    return () => clearTimeout(searchTimeoutRef.current);
-  }, [searchQuery]);
+    // 2) Filter from the "projections" prop
+    const filtered = projections
+      .filter(
+        (proj) =>
+          proj.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          proj.id.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+      .slice(0, 25);
+    setItems(filtered);
+  }, [searchQuery, projections]);
 
   const handlePRJUpload = async (file: File) => {
     try {
@@ -99,14 +101,19 @@ export function ProjectionInput({
         </TabsList>
 
         <TabsContent value="search" className="mt-4">
-          <Command className="w-full">
+          <Command className="w-full" shouldFilter={false}>
             <button
               className={cn(
                 "flex h-10 w-full items-center justify-between rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white",
                 "hover:bg-slate-100 dark:hover:bg-slate-700/50",
                 "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900"
               )}
-              onClick={() => setOpen(!open)}
+              onClick={() => {
+                setOpen(!open);
+                if (!open) {
+                  setTimeout(() => inputRef.current?.focus(), 10);
+                }
+              }}
             >
               {value ? (
                 items.find((item) => item.id === value)?.name || value
@@ -122,10 +129,11 @@ export function ProjectionInput({
               <div className="relative mt-2">
                 <div className="absolute top-0 z-50 w-full rounded-md border border-slate-200 bg-white shadow-md dark:border-slate-700 dark:bg-slate-800">
                   <CommandInput
+                    ref={inputRef}
                     placeholder={placeholder}
                     value={searchQuery}
                     onValueChange={setSearchQuery}
-                    onBlur={() => setOpen(false)}
+                    onBlur={() => setTimeout(() => setOpen(false), 100)}
                     className="w-full border-0 border-b border-slate-200 px-3 py-2 text-sm dark:border-slate-700"
                   />
                   <CommandList>
@@ -135,22 +143,24 @@ export function ProjectionInput({
                     <CommandEmpty className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">
                       No projection found.
                     </CommandEmpty>
-                    <CommandGroup className="max-h-60 overflow-auto p-1">
+                    <CommandGroup className="max-h-60 overflow-auto p-1 ">
                       {items.map((proj) => (
                         <CommandItem
                           key={proj.id}
                           value={proj.id}
+                          onMouseDown={(e) => e.preventDefault()} // Prevents blur when clicking an item
                           onSelect={(currentValue) => {
+                            console.log("currentValue", currentValue);
                             onValueChange(
                               currentValue === value ? "" : currentValue
                             );
                             setOpen(false);
                           }}
-                          className="flex items-center justify-between px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700"
+                          className="flex items-center justify-between px-3 py-2 text-sm cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700"
                         >
                           <div>
                             <div className="font-medium">{proj.name}</div>
-                            <div className="text-xs text-slate-500 dark:text-slate-400">
+                            <div className="text-xs text-slate-500 dark:text-slate-400 truncate overflow-hidden whitespace-nowrap max-w-[280px]">
                               {proj.code}
                             </div>
                           </div>

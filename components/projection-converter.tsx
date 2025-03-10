@@ -1,18 +1,21 @@
-"use client"
+"use client";
 
-import { useEffect } from "react"
-import { ArrowRight, Download } from "lucide-react"
-import { ProjectionInput } from "./projection-input"
+import { useEffect } from "react";
+import { ArrowDown, Download } from "lucide-react";
+import { ProjectionInput } from "./projection-input";
+import type { Projection } from "@/lib/types";
 
 interface ProjectionConverterProps {
-  sourceProjection: string
-  targetProjection: string
-  onSourceChange: (projection: string) => void
-  onTargetChange: (projection: string) => void
-  onConvert: () => void
-  onDownload: () => void
-  canConvert: boolean
-  hasConverted: boolean
+  sourceProjection: string;
+  targetProjection: string;
+  onSourceChange: (projection: string) => void;
+  onTargetChange: (projection: string) => void;
+  onConvert: () => void;
+  onDownload: () => void;
+  canConvert: boolean;
+  hasConverted: boolean;
+  projections: Projection[];
+  loadingProjections: boolean;
 }
 
 export function ProjectionConverter({
@@ -24,17 +27,21 @@ export function ProjectionConverter({
   onDownload,
   canConvert,
   hasConverted,
+  projections,
+  loadingProjections,
 }: ProjectionConverterProps) {
   // Set WGS84 as default target projection
   useEffect(() => {
     if (!targetProjection) {
-      onTargetChange("epsg:4326") // WGS84
+      onTargetChange("epsg:4326"); // WGS84
     }
-  }, [targetProjection, onTargetChange])
+  }, [targetProjection, onTargetChange]);
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-slate-900 dark:text-white">Projection Settings</h2>
+      <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+        Projection Settings
+      </h2>
 
       <div className="space-y-6">
         <ProjectionInput
@@ -43,11 +50,13 @@ export function ProjectionConverter({
           label="Source Projection"
           placeholder="Search source projection..."
           defaultMethod="search"
+          projections={projections}
+          loading={loadingProjections}
         />
 
         <div className="flex justify-center">
           <div className="p-2 bg-slate-100 dark:bg-slate-700 rounded-full">
-            <ArrowRight className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+            <ArrowDown className="h-4 w-4 text-slate-500 dark:text-slate-400" />
           </div>
         </div>
 
@@ -57,6 +66,8 @@ export function ProjectionConverter({
           label="Target Projection"
           placeholder="Search target projection..."
           defaultMethod="search"
+          projections={projections}
+          loading={loadingProjections}
         />
       </div>
 
@@ -84,6 +95,5 @@ export function ProjectionConverter({
         )}
       </div>
     </div>
-  )
+  );
 }
-
