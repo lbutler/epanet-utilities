@@ -5,6 +5,7 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { Layers } from "lucide-react";
 import type { GeoJSONFeatureCollection } from "@/lib/types";
+import { useMapResizeObserver } from "@/hooks/use-mapresize-observer";
 
 // This is a placeholder token - in a real app, you would use an environment variable
 // and a proper token with restricted access
@@ -49,6 +50,8 @@ export function MapDisplay({ geoJSON }: MapDisplayProps) {
       setMapLoaded(false);
     }
   }, []);
+
+  useMapResizeObserver(map, mapContainer);
 
   // Update map when GeoJSON changes
   useEffect(() => {
@@ -122,9 +125,11 @@ export function MapDisplay({ geoJSON }: MapDisplayProps) {
         new mapboxgl.LngLatBounds(coordinates[0], coordinates[0])
       );
 
-      map.current.fitBounds(bounds, {
-        padding: 50,
-      });
+      setTimeout(() => {
+        if (!map.current) return;
+        map.current.resize();
+        map.current.fitBounds(bounds, { padding: 50, duration: 0 });
+      }, 100);
     }
   }, [geoJSON, mapLoaded]);
 
