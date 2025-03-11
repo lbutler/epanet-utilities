@@ -75,7 +75,7 @@ export default function Home() {
       setNetworkData(data);
 
       // Clear map data if no file is selected
-      if (!data) {
+      if (!data || !file) {
         setMapData(null);
         setConvertedCoordinates(null);
         return;

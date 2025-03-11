@@ -27,7 +27,11 @@ export function MapDisplay({ geoJSON }: MapDisplayProps) {
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: "mapbox://styles/mapbox/light-v11",
-        center: [-122.4194, 37.7749], // Default to San Francisco
+        projection: "mercator",
+        bounds: [
+          [-180, -90],
+          [180, 90],
+        ],
         zoom: 12,
       });
 
@@ -48,7 +52,7 @@ export function MapDisplay({ geoJSON }: MapDisplayProps) {
   useMapResizeObserver(map, mapContainer);
 
   useEffect(() => {
-    if (!map.current || !mapLoaded || !geoJSON) return;
+    if (!map.current || !mapLoaded) return;
 
     // Remove existing layers if they exist
     if (map.current.getLayer("network-points")) {
@@ -59,6 +63,19 @@ export function MapDisplay({ geoJSON }: MapDisplayProps) {
     }
     if (map.current.getSource("network")) {
       map.current.removeSource("network");
+    }
+
+    if (!geoJSON) {
+      setTimeout(() => {
+        if (map.current) {
+          map.current.setZoom(0);
+          map.current.setCenter([0, 0]);
+        }
+      }, 100);
+
+      // @ts-expect-error // Types are wrong, it does accept null to reset
+      map.current.setMaxBounds(null);
+      return;
     }
 
     // Add new source and layers
