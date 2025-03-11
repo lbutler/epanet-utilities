@@ -13,18 +13,19 @@ import type {
 import {
   parseINPFile,
   convertCoordinates,
-  convertToWGS84,
-  createGeoJSON,
-  generateNewINP,
+  convertGeoJsonToWGS84,
 } from "@/lib/network-utils";
 
 import { isLikelyLatLng } from "@/lib/check-projection";
 import { approximateReprojectToLatLng } from "@/lib/approx-reproject";
 
-import { toGeoJson } from "@/lib/epanet-geojson";
+import { toGeoJson, ToGeoJsonResult } from "@/lib/epanet-geojson";
 
 export default function Home() {
   const [networkData, setNetworkData] = useState<NetworkData | null>(null);
+  const [epanetGeoJson, setEpanetGeoJson] = useState<ToGeoJsonResult | null>(
+    null
+  );
   const [sourceProjection, setSourceProjection] = useState<Projection | null>(
     null
   );
@@ -57,9 +58,9 @@ export default function Home() {
   const handleFileLoaded = async (file: File | null) => {
     try {
       const data = await parseINPFile(file);
-      console.log(data);
       if (data?.inp) {
         const modelGeojson = toGeoJson(data?.inp);
+        setEpanetGeoJson(modelGeojson);
         if (isLikelyLatLng(modelGeojson.geojson)) {
           setMapData(modelGeojson.geojson);
           setSourceProjection({
@@ -105,13 +106,12 @@ export default function Home() {
     console.log(projection);
     setSourceProjection(projection);
 
-    if (networkData && projection && projection.id !== "EPSG:4326") {
-      //TODO: Convert to WGS84 and add to map
-      //const wgs84Coords = convertToWGS84(
-      //  networkData.coordinates,
-      //  projection.code
-      //);
-      //setMapData(createGeoJSON(wgs84Coords));
+    if (epanetGeoJson && projection && projection.id !== "EPSG:4326") {
+      const wgs84Coords = convertGeoJsonToWGS84(
+        epanetGeoJson?.geojson,
+        projection.code
+      );
+      setMapData(wgs84Coords);
     }
   };
 

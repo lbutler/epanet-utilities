@@ -3,6 +3,7 @@ import type {
   NetworkData,
   GeoJSONFeatureCollection,
 } from "./types";
+import type { EpanetGeoJSON, EpanetFeature } from "./epanet-geojson";
 import proj4 from "proj4";
 
 // Parse INP file and extract coordinates
@@ -146,10 +147,53 @@ export function convertCoordinates(
   };
 }
 
-// Convert coordinates to WGS84
-export function convertToWGS84(
-  networkData: NetworkData,
+/**
+ * Converts an EpanetGeoJSON object to WGS84.
+ * @param geojson The input EpanetGeoJSON with a different projection.
+ * @param sourceProjection The source projection string.
+ * @returns A new EpanetGeoJSON with all coordinates converted to WGS84.
+ */
+export function convertGeoJsonToWGS84(
+  geojson: EpanetGeoJSON,
   sourceProjection: string
-): NetworkData {
-  return convertCoordinates(networkData, sourceProjection, "epsg:4326");
+): EpanetGeoJSON {
+  return {
+    ...geojson,
+    features: geojson.features.map((feature) => {
+      const { geometry, properties, type, id, bbox } = feature;
+
+      if (geometry.type === "Point") {
+        // Convert point coordinates
+        const [x, y] = geometry.coordinates;
+        const [lon, lat] = proj4(sourceProjection, "EPSG:4326", [x, y]);
+
+        return {
+          ...feature,
+          geometry: {
+            ...geometry,
+            coordinates: [lon, lat],
+          },
+        } as EpanetFeature; // Explicitly cast to maintain type safety
+      } else if (geometry.type === "LineString") {
+        // Convert each vertex in the polyline
+        const convertedCoordinates = geometry.coordinates.map(([x, y]) =>
+          proj4(sourceProjection, "EPSG:4326", [x, y])
+        );
+
+        return {
+          type,
+          geometry: {
+            ...geometry,
+            coordinates: convertedCoordinates,
+          },
+          properties,
+          id,
+          bbox,
+        } as EpanetFeature; // Explicitly cast to ensure compatibility
+      }
+
+      // If it's not Point or LineString, return it unchanged (shouldn't happen in EPANET context)
+      return feature;
+    }),
+  };
 }

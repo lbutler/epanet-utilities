@@ -24,7 +24,7 @@ export interface EpanetGeoJSON extends FeatureCollection {
 }
 
 /** Any EPANET Feature can be a Node or a Link */
-type EpanetFeature = NodeFeature | LinkFeature;
+export type EpanetFeature = NodeFeature | LinkFeature;
 
 /** Nodes vs. Links */
 type NodeFeature = Junction | Tank | Reservoir;
