@@ -62,11 +62,21 @@ export default function Home() {
         const modelGeojson = toGeoJson(data?.originalContent);
         if (isLikelyLatLng(modelGeojson.geojson)) {
           setMapData(modelGeojson.geojson);
+          setSourceProjection({
+            id: "EPSG:4326",
+            name: "WGS 84",
+            code: "+proj=longlat +datum=WGS84 +no_defs",
+          });
         } else {
           const approxGeojson = approximateReprojectToLatLng(
             modelGeojson.geojson
           );
           setMapData(approxGeojson);
+          setTargetProjection({
+            id: "EPSG:4326",
+            name: "WGS 84",
+            code: "+proj=longlat +datum=WGS84 +no_defs",
+          });
         }
 
         console.log(modelGeojson.geojson);
@@ -78,6 +88,8 @@ export default function Home() {
       if (!data || !file) {
         setMapData(null);
         setConvertedCoordinates(null);
+        setSourceProjection(null);
+        setTargetProjection(null);
         return;
       }
 
