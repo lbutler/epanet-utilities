@@ -25,6 +25,7 @@ export async function parseINPFile(
         coordinates,
         vertices,
         inp: content,
+        name: file.name,
       });
     };
 

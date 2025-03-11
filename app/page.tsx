@@ -155,7 +155,12 @@ export default function Home() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "converted_network.inp";
+    //networkdata.name ends with .inp revove that and add [targetProjection.id] to the end
+
+    const trimmedName = networkData.name.endsWith(".inp")
+      ? networkData.name.slice(0, -4)
+      : networkData.name;
+    a.download = `${trimmedName}-[${targetProjection.id}].inp`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
