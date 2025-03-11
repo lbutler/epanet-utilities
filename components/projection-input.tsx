@@ -129,6 +129,10 @@ export function ProjectionInput({
               )}
               onClick={() => {
                 setOpen(!open);
+                // set focus to input when opening dropdown
+                if (!open) {
+                  setTimeout(() => inputRef.current?.focus(), 10);
+                }
               }}
             >
               {value ? (
