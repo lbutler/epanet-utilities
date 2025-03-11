@@ -72,7 +72,7 @@ export function ProjectionInput({
     try {
       const manualProjection: Projection = {
         id: "CUSTOM",
-        name: file.name,
+        name: "Custom Projection",
         code: await file.text(),
       };
       const content = await file.text();
@@ -129,9 +129,6 @@ export function ProjectionInput({
               )}
               onClick={() => {
                 setOpen(!open);
-                if (!open) {
-                  setTimeout(() => inputRef.current?.focus(), 10);
-                }
               }}
             >
               {value ? (
@@ -168,15 +165,18 @@ export function ProjectionInput({
                           value={proj.id}
                           onMouseDown={(e) => e.preventDefault()} // Prevents blur when clicking an item
                           onSelect={(currentValue) => {
+                            setOpen(false);
                             const proj = items.find(
                               (p) => p.id === currentValue
                             );
                             if (!proj) return;
 
+                            setPrjFile(null);
+                            setManualInput(proj.code);
+
                             onValueChange(
                               currentValue === value?.id ? null : proj
                             );
-                            setOpen(false);
                           }}
                           className="flex items-center justify-between px-3 py-2 text-sm cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700"
                         >
@@ -271,6 +271,7 @@ export function ProjectionInput({
                   name: "Custom Projection",
                   code: e.target.value,
                 };
+                setPrjFile(null);
                 setManualInput(e.target.value);
                 onValueChange(manualProjection);
               }}
