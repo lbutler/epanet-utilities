@@ -58,8 +58,8 @@ export default function Home() {
     try {
       const data = await parseINPFile(file);
       console.log(data);
-      if (data?.originalContent) {
-        const modelGeojson = toGeoJson(data?.originalContent);
+      if (data?.inp) {
+        const modelGeojson = toGeoJson(data?.inp);
         if (isLikelyLatLng(modelGeojson.geojson)) {
           setMapData(modelGeojson.geojson);
           setSourceProjection({
@@ -92,15 +92,6 @@ export default function Home() {
         setTargetProjection(null);
         return;
       }
-
-      // If source projection is already selected, update map
-      if (sourceProjection) {
-        const wgs84Coords = convertToWGS84(
-          data.coordinates,
-          sourceProjection.code
-        );
-        setMapData(createGeoJSON(wgs84Coords));
-      }
     } catch (error) {
       console.error("Error processing file:", error);
       // Handle error appropriately (e.g., show error message to user)
@@ -114,12 +105,13 @@ export default function Home() {
     console.log(projection);
     setSourceProjection(projection);
 
-    if (networkData && projection) {
-      const wgs84Coords = convertToWGS84(
-        networkData.coordinates,
-        projection.code
-      );
-      setMapData(createGeoJSON(wgs84Coords));
+    if (networkData && projection && projection.id !== "EPSG:4326") {
+      //TODO: Convert to WGS84 and add to map
+      //const wgs84Coords = convertToWGS84(
+      //  networkData.coordinates,
+      //  projection.code
+      //);
+      //setMapData(createGeoJSON(wgs84Coords));
     }
   };
 
@@ -128,23 +120,21 @@ export default function Home() {
   };
 
   const handleConvert = () => {
-    if (!networkData || !sourceProjection || !targetProjection) return;
-
-    const converted = convertCoordinates(
-      networkData.coordinates,
-      sourceProjection.code,
-      targetProjection.code
-    );
-    setConvertedCoordinates(converted);
+    //TODO: Handle conversion
+    //    if (!networkData || !sourceProjection || !targetProjection) return;
+    //
+    //    const converted = convertCoordinates(
+    //      networkData.coordinates,
+    //      sourceProjection.code,
+    //      targetProjection.code
+    //    );
+    //    setConvertedCoordinates(converted);
   };
 
   const handleDownload = () => {
     if (!networkData || !convertedCoordinates) return;
 
-    const newContent = generateNewINP(
-      networkData.originalContent,
-      convertedCoordinates
-    );
+    const newContent = generateNewINP(networkData.inp, convertedCoordinates);
 
     // Create and trigger download
     const blob = new Blob([newContent], { type: "text/plain" });

@@ -1,8 +1,9 @@
 export type Coordinate = [number, number];
 
 export type NetworkData = {
-  coordinates: Coordinate[];
-  originalContent: string;
+  coordinates: Record<string, [number, number]>; // Node ID -> [X, Y]
+  vertices: Record<string, [number, number][]>; // Link ID -> Array of [X, Y] coordinates
+  inp: string;
 };
 
 export type GeoJSONFeature = {
