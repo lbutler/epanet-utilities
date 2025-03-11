@@ -7,8 +7,6 @@ import { Layers } from "lucide-react";
 import type { GeoJSONFeatureCollection } from "@/lib/types";
 import { useMapResizeObserver } from "@/hooks/use-mapresize-observer";
 
-// This is a placeholder token - in a real app, you would use an environment variable
-// and a proper token with restricted access
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
 interface MapDisplayProps {
@@ -21,10 +19,7 @@ export function MapDisplay({ geoJSON }: MapDisplayProps) {
   const [mapLoaded, setMapLoaded] = useState(false);
 
   useEffect(() => {
-    if (!mapContainer.current) return;
-
-    // Initialize map only once
-    if (map.current) return;
+    if (!mapContainer.current || map.current) return;
 
     try {
       mapboxgl.accessToken = MAPBOX_TOKEN;
@@ -32,7 +27,7 @@ export function MapDisplay({ geoJSON }: MapDisplayProps) {
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
         style: "mapbox://styles/mapbox/light-v11",
-        center: [-122.4194, 37.7749], // San Francisco
+        center: [-122.4194, 37.7749], // Default to San Francisco
         zoom: 12,
       });
 
@@ -40,7 +35,6 @@ export function MapDisplay({ geoJSON }: MapDisplayProps) {
         setMapLoaded(true);
       });
 
-      // Clean up on unmount
       return () => {
         map.current?.remove();
         map.current = null;
@@ -53,7 +47,6 @@ export function MapDisplay({ geoJSON }: MapDisplayProps) {
 
   useMapResizeObserver(map, mapContainer);
 
-  // Update map when GeoJSON changes
   useEffect(() => {
     if (!map.current || !mapLoaded || !geoJSON) return;
 
@@ -109,7 +102,7 @@ export function MapDisplay({ geoJSON }: MapDisplayProps) {
       minzoom: 13,
     });
 
-    // Fit bounds to the network
+    // Compute bounds from geoJSON data
     const coordinates = geoJSON.features.flatMap((feature) => {
       if (feature.geometry.type === "Point") {
         return [feature.geometry.coordinates as [number, number]];
@@ -124,6 +117,24 @@ export function MapDisplay({ geoJSON }: MapDisplayProps) {
         (bounds, coord) => bounds.extend(coord as mapboxgl.LngLatLike),
         new mapboxgl.LngLatBounds(coordinates[0], coordinates[0])
       );
+
+      const expandFactor = 1; // Adjust this factor if needed
+      const southWest = bounds.getSouthWest();
+      const northEast = bounds.getNorthEast();
+
+      const expandedBounds = new mapboxgl.LngLatBounds(
+        [
+          southWest.lng - expandFactor * (northEast.lng - southWest.lng),
+          southWest.lat - expandFactor * (northEast.lat - southWest.lat),
+        ],
+        [
+          northEast.lng + expandFactor * (northEast.lng - southWest.lng),
+          northEast.lat + expandFactor * (northEast.lat - southWest.lat),
+        ]
+      );
+
+      // **Set expanded max bounds to prevent excessive panning**
+      map.current.setMaxBounds(expandedBounds);
 
       setTimeout(() => {
         if (!map.current) return;
