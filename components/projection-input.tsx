@@ -42,6 +42,7 @@ export function ProjectionInput({
   const [manualInput, setManualInput] = React.useState("");
   const [prjFile, setPrjFile] = React.useState<File | null>(null);
   const inputRef = React.useRef<HTMLInputElement | null>(null);
+  const dropdownRef = React.useRef<HTMLDivElement | null>(null);
 
   // Handle projection search
   React.useEffect(() => {
@@ -101,7 +102,20 @@ export function ProjectionInput({
         </TabsList>
 
         <TabsContent value="search" className="mt-4">
-          <Command className="w-full" shouldFilter={false}>
+          <Command
+            ref={dropdownRef}
+            className="w-full"
+            shouldFilter={false}
+            onBlur={(e) => {
+              if (
+                dropdownRef.current &&
+                dropdownRef.current.contains(e.relatedTarget)
+              ) {
+                return; // Prevent closing if clicking inside dropdown
+              }
+              setTimeout(() => setOpen(false), 100); // Close if clicked outside
+            }}
+          >
             <button
               className={cn(
                 "flex h-10 w-full items-center justify-between rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white",
@@ -133,7 +147,6 @@ export function ProjectionInput({
                     placeholder={placeholder}
                     value={searchQuery}
                     onValueChange={setSearchQuery}
-                    onBlur={() => setTimeout(() => setOpen(false), 100)}
                     className="w-full border-0 border-b border-slate-200 px-3 py-2 text-sm dark:border-slate-700"
                   />
                   <CommandList>
@@ -150,7 +163,6 @@ export function ProjectionInput({
                           value={proj.id}
                           onMouseDown={(e) => e.preventDefault()} // Prevents blur when clicking an item
                           onSelect={(currentValue) => {
-                            console.log("currentValue", currentValue);
                             onValueChange(
                               currentValue === value ? "" : currentValue
                             );

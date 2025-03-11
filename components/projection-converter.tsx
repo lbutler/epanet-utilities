@@ -30,13 +30,6 @@ export function ProjectionConverter({
   projections,
   loadingProjections,
 }: ProjectionConverterProps) {
-  // Set WGS84 as default target projection
-  useEffect(() => {
-    if (!targetProjection) {
-      onTargetChange("epsg:4326"); // WGS84
-    }
-  }, [targetProjection, onTargetChange]);
-
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
