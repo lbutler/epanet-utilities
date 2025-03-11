@@ -6,10 +6,10 @@ import { ProjectionInput } from "./projection-input";
 import type { Projection } from "@/lib/types";
 
 interface ProjectionConverterProps {
-  sourceProjection: string;
-  targetProjection: string;
-  onSourceChange: (projection: string) => void;
-  onTargetChange: (projection: string) => void;
+  sourceProjection: Projection | null;
+  targetProjection: Projection | null;
+  onSourceChange: (projection: Projection | null) => void;
+  onTargetChange: (projection: Projection | null) => void;
   onConvert: () => void;
   onDownload: () => void;
   canConvert: boolean;

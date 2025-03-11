@@ -16,8 +16,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Projection, ProjectionInputMethod } from "@/lib/types";
 
 interface ProjectionInputProps {
-  value: string;
-  onValueChange: (value: string) => void;
+  value: Projection | null;
+  onValueChange: (value: Projection | null) => void;
   label: string;
   placeholder?: string;
   defaultMethod?: ProjectionInputMethod;
@@ -70,10 +70,15 @@ export function ProjectionInput({
 
   const handlePRJUpload = async (file: File) => {
     try {
+      const manualProjection: Projection = {
+        id: "CUSTOM",
+        name: file.name,
+        code: await file.text(),
+      };
       const content = await file.text();
       setPrjFile(file);
       setManualInput(content);
-      onValueChange(content);
+      onValueChange(manualProjection);
     } catch (error) {
       console.error("Failed to read PRJ file:", error);
     }
@@ -82,7 +87,7 @@ export function ProjectionInput({
   const clearPRJFile = () => {
     setPrjFile(null);
     setManualInput("");
-    onValueChange("");
+    onValueChange(null);
   };
 
   return (
@@ -130,7 +135,7 @@ export function ProjectionInput({
               }}
             >
               {value ? (
-                items.find((item) => item.id === value)?.name || value
+                value.name
               ) : (
                 <span className="text-slate-500 dark:text-slate-400">
                   Select projection...
@@ -163,8 +168,13 @@ export function ProjectionInput({
                           value={proj.id}
                           onMouseDown={(e) => e.preventDefault()} // Prevents blur when clicking an item
                           onSelect={(currentValue) => {
+                            const proj = items.find(
+                              (p) => p.id === currentValue
+                            );
+                            if (!proj) return;
+
                             onValueChange(
-                              currentValue === value ? "" : currentValue
+                              currentValue === value?.id ? null : proj
                             );
                             setOpen(false);
                           }}
@@ -176,7 +186,9 @@ export function ProjectionInput({
                               {proj.code}
                             </div>
                           </div>
-                          {value === proj.id && <Check className="h-4 w-4" />}
+                          {value?.id === proj.id && (
+                            <Check className="h-4 w-4" />
+                          )}
                         </CommandItem>
                       ))}
                     </CommandGroup>
@@ -254,8 +266,13 @@ export function ProjectionInput({
             <textarea
               value={manualInput}
               onChange={(e) => {
+                const manualProjection: Projection = {
+                  id: "CUSTOM",
+                  name: "Custom Projection",
+                  code: e.target.value,
+                };
                 setManualInput(e.target.value);
-                onValueChange(e.target.value);
+                onValueChange(manualProjection);
               }}
               placeholder="Enter proj4 string or WKT definition..."
               className="w-full h-32 px-3 py-2 text-sm rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400"

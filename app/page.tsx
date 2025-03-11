@@ -25,8 +25,12 @@ import { toGeoJson } from "@/lib/epanet-geojson";
 
 export default function Home() {
   const [networkData, setNetworkData] = useState<NetworkData | null>(null);
-  const [sourceProjection, setSourceProjection] = useState<string>("");
-  const [targetProjection, setTargetProjection] = useState<string>("");
+  const [sourceProjection, setSourceProjection] = useState<Projection | null>(
+    null
+  );
+  const [targetProjection, setTargetProjection] = useState<Projection | null>(
+    null
+  );
   const [convertedCoordinates, setConvertedCoordinates] = useState<
     Coordinate[] | null
   >(null);
@@ -79,7 +83,10 @@ export default function Home() {
 
       // If source projection is already selected, update map
       if (sourceProjection) {
-        const wgs84Coords = convertToWGS84(data.coordinates, sourceProjection);
+        const wgs84Coords = convertToWGS84(
+          data.coordinates,
+          sourceProjection.code
+        );
         setMapData(createGeoJSON(wgs84Coords));
       }
     } catch (error) {
@@ -91,17 +98,20 @@ export default function Home() {
     }
   };
 
-  const handleSourceProjectionChange = (projection: string) => {
+  const handleSourceProjectionChange = (projection: Projection | null) => {
     console.log(projection);
     setSourceProjection(projection);
 
-    if (networkData) {
-      const wgs84Coords = convertToWGS84(networkData.coordinates, projection);
+    if (networkData && projection) {
+      const wgs84Coords = convertToWGS84(
+        networkData.coordinates,
+        projection.code
+      );
       setMapData(createGeoJSON(wgs84Coords));
     }
   };
 
-  const handleTargetProjectionChange = (projection: string) => {
+  const handleTargetProjectionChange = (projection: Projection | null) => {
     setTargetProjection(projection);
   };
 
@@ -110,8 +120,8 @@ export default function Home() {
 
     const converted = convertCoordinates(
       networkData.coordinates,
-      sourceProjection,
-      targetProjection
+      sourceProjection.code,
+      targetProjection.code
     );
     setConvertedCoordinates(converted);
   };
