@@ -165,6 +165,7 @@ export function convertCoordinates(
     coordinates: transformedCoordinates,
     vertices: transformedVertices,
     inp: networkData.inp, // Keep original INP content
+    name: networkData.name,
   };
 }
 
