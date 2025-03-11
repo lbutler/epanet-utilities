@@ -174,8 +174,8 @@ export function approximateReprojectToLatLng<
       .filter((feature) => feature.geometry)
       .map((feature) => findMinXY(feature.geometry as Geometry));
 
-    minX = Math.min(...minValues.map(([x]) => x));
-    minY = Math.min(...minValues.map(([, y]) => y));
+    minX = minValues.reduce((min, [x]) => Math.min(min, x), Infinity);
+    minY = minValues.reduce((min, [, y]) => Math.min(min, y), Infinity);
   } else if (geojson.type === "Feature" && geojson.geometry) {
     [minX, minY] = findMinXY(geojson.geometry);
   } else {
