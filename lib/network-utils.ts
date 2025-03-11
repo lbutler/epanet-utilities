@@ -71,50 +71,70 @@ function extractGeometryData(
   return [coordinates, vertices];
 }
 
-// Update INP file with reprojected coordinates and vertices
 export function updateINPWithReprojectedData(
   inpContent: string,
-  networkData: NetworkData
+  networkData: NetworkData,
+  decimalPrecision: number = 4
 ): string {
   const lines = inpContent.split("\n");
   let section: string | null = null;
   const updatedLines: string[] = [];
+  let insideCoordinates = false;
+  let insideVertices = false;
+  let hasEndSection = false;
 
   for (const line of lines) {
     const trimmed = line.trim();
+
+    // Detect and remove [END]
+    if (trimmed === "[END]") {
+      hasEndSection = true;
+      continue;
+    }
+
+    // Detect section headers
     if (trimmed.startsWith("[")) {
       section = trimmed;
+      insideCoordinates = section === "[COORDINATES]";
+      insideVertices = section === "[VERTICES]";
       updatedLines.push(line);
       continue;
     }
 
-    if (section === "[COORDINATES]" && trimmed) {
-      const parts = trimmed.split(/\s+/);
-      if (parts.length >= 3 && networkData.coordinates[parts[0]]) {
-        const [id] = parts;
-        const [newX, newY] = networkData.coordinates[id];
-        updatedLines.push(`${id} ${newX.toFixed(2)} ${newY.toFixed(2)}`);
-        continue;
-      }
-    }
-
-    if (section === "[VERTICES]" && trimmed) {
-      const parts = trimmed.split(/\s+/);
-      if (parts.length >= 3) {
-        const [linkId] = parts;
-        if (networkData.vertices[linkId]) {
-          networkData.vertices[linkId].forEach(([newX, newY]) => {
-            updatedLines.push(
-              `${linkId} ${newX.toFixed(2)} ${newY.toFixed(2)}`
-            );
-          });
-          continue;
-        }
-      }
+    // Skip all lines inside the old COORDINATES and VERTICES sections
+    if (insideCoordinates || insideVertices) {
+      continue;
     }
 
     updatedLines.push(line);
   }
+
+  // Append the updated COORDINATES section
+  if (Object.keys(networkData.coordinates).length > 0) {
+    updatedLines.push("\n[COORDINATES]");
+    for (const [id, [x, y]] of Object.entries(networkData.coordinates)) {
+      updatedLines.push(
+        `${id} ${x.toFixed(decimalPrecision)} ${y.toFixed(decimalPrecision)}`
+      );
+    }
+  }
+
+  // Append the updated VERTICES section
+  if (Object.keys(networkData.vertices).length > 0) {
+    updatedLines.push("\n[VERTICES]");
+    for (const [linkId, points] of Object.entries(networkData.vertices)) {
+      for (const [x, y] of points) {
+        updatedLines.push(
+          `${linkId} ${x.toFixed(decimalPrecision)} ${y.toFixed(
+            decimalPrecision
+          )}`
+        );
+      }
+    }
+  }
+
+  // Ensure [END] is re-added at the end of the file
+  updatedLines.push("\n[END]");
 
   return updatedLines.join("\n");
 }

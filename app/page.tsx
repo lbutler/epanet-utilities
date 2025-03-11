@@ -14,6 +14,7 @@ import {
   parseINPFile,
   convertCoordinates,
   convertGeoJsonToWGS84,
+  updateINPWithReprojectedData,
 } from "@/lib/network-utils";
 
 import { isLikelyLatLng } from "@/lib/check-projection";
@@ -32,9 +33,8 @@ export default function Home() {
   const [targetProjection, setTargetProjection] = useState<Projection | null>(
     null
   );
-  const [convertedCoordinates, setConvertedCoordinates] = useState<
-    Coordinate[] | null
-  >(null);
+  const [convertedCoordinates, setConvertedCoordinates] =
+    useState<NetworkData | null>(null);
   const [mapData, setMapData] = useState<GeoJSONFeatureCollection | null>(null);
   const [projections, setProjections] = useState<Projection[]>([]);
   const [loadingProjections, setLoadingProjections] = useState<boolean>(true);
@@ -120,21 +120,35 @@ export default function Home() {
   };
 
   const handleConvert = () => {
-    //TODO: Handle conversion
-    //    if (!networkData || !sourceProjection || !targetProjection) return;
-    //
-    //    const converted = convertCoordinates(
-    //      networkData.coordinates,
-    //      sourceProjection.code,
-    //      targetProjection.code
-    //    );
-    //    setConvertedCoordinates(converted);
+    if (!networkData || !sourceProjection || !targetProjection) return;
+
+    const convertedNetworkData = convertCoordinates(
+      networkData,
+      sourceProjection.code,
+      targetProjection.code
+    );
+    setConvertedCoordinates(convertedNetworkData);
   };
 
   const handleDownload = () => {
-    if (!networkData || !convertedCoordinates) return;
+    if (
+      !networkData ||
+      !sourceProjection ||
+      !targetProjection ||
+      !convertedCoordinates
+    )
+      return;
 
-    const newContent = generateNewINP(networkData.inp, convertedCoordinates);
+    const isLatLng = targetProjection.id === "EPSG:4326";
+    console.log(targetProjection, isLatLng);
+    const numberOfDecimals = isLatLng ? 6 : 2;
+
+    // Generate new INP file with reprojected coordinates
+    const newContent = updateINPWithReprojectedData(
+      networkData.inp,
+      convertedCoordinates,
+      numberOfDecimals
+    );
 
     // Create and trigger download
     const blob = new Blob([newContent], { type: "text/plain" });
