@@ -13,14 +13,6 @@ export function isLikelyLatLng(geojson: FeatureCollection | Feature): boolean {
   function checkGeometry(geometry: Geometry): boolean {
     if (!geometry) return false;
 
-    function traverseCoords(coords: any): boolean {
-      if (typeof coords[0] === "number") {
-        return isValidCoord(coords as [number, number]);
-      } else {
-        return coords.every(traverseCoords);
-      }
-    }
-
     switch (geometry.type) {
       case "Point":
         return isValidCoord(geometry.coordinates as [number, number]);

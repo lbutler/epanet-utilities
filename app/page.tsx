@@ -5,7 +5,6 @@ import { FileUploader } from "@/components/file-uploader";
 import { ProjectionConverter } from "@/components/projection-converter";
 import { MapDisplay } from "@/components/map-display";
 import type {
-  Coordinate,
   NetworkData,
   GeoJSONFeatureCollection,
   Projection,

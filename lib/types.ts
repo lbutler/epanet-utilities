@@ -13,6 +13,7 @@ export type GeoJSONFeature = {
     type: "Point" | "LineString";
     coordinates: Coordinate | Coordinate[];
   };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   properties: Record<string, any>;
 };
 

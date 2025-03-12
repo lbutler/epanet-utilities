@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { ArrowDown, Download } from "lucide-react";
 import { ProjectionInput } from "./projection-input";
 import type { Projection } from "@/lib/types";

@@ -1,8 +1,4 @@
-import type {
-  Coordinate,
-  NetworkData,
-  GeoJSONFeatureCollection,
-} from "./types";
+import type { NetworkData } from "./types";
 import type { EpanetGeoJSON, EpanetFeature } from "./epanet-geojson";
 import proj4 from "proj4";
 
@@ -82,14 +78,12 @@ export function updateINPWithReprojectedData(
   const updatedLines: string[] = [];
   let insideCoordinates = false;
   let insideVertices = false;
-  let hasEndSection = false;
 
   for (const line of lines) {
     const trimmed = line.trim();
 
     // Detect and remove [END]
     if (trimmed === "[END]") {
-      hasEndSection = true;
       continue;
     }
 
