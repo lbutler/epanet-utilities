@@ -1,5 +1,3 @@
-export type Coordinate = [number, number];
-
 export type NetworkData = {
   coordinates: Record<string, [number, number]>; // Node ID -> [X, Y]
   vertices: Record<string, [number, number][]>; // Link ID -> Array of [X, Y] coordinates
