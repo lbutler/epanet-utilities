@@ -4,11 +4,8 @@ import { useState, useEffect } from "react";
 import { FileUploader } from "@/components/file-uploader";
 import { ProjectionConverter } from "@/components/projection-converter";
 import { MapDisplay } from "@/components/map-display";
-import type {
-  NetworkData,
-  GeoJSONFeatureCollection,
-  Projection,
-} from "@/lib/types";
+import type { NetworkData, Projection } from "@/lib/types";
+import { FeatureCollection, GeoJsonProperties, Geometry } from "geojson";
 import {
   parseINPFile,
   convertCoordinates,
@@ -34,7 +31,10 @@ export default function Home() {
   );
   const [convertedCoordinates, setConvertedCoordinates] =
     useState<NetworkData | null>(null);
-  const [mapData, setMapData] = useState<GeoJSONFeatureCollection | null>(null);
+  const [mapData, setMapData] = useState<FeatureCollection<
+    Geometry,
+    GeoJsonProperties
+  > | null>(null);
   const [projections, setProjections] = useState<Projection[]>([]);
   const [loadingProjections, setLoadingProjections] = useState<boolean>(true);
 

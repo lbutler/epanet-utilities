@@ -7,21 +7,6 @@ export type NetworkData = {
   name: string;
 };
 
-export type GeoJSONFeature = {
-  type: "Feature";
-  geometry: {
-    type: "Point" | "LineString";
-    coordinates: Coordinate | Coordinate[];
-  };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  properties: Record<string, any>;
-};
-
-export type GeoJSONFeatureCollection = {
-  type: "FeatureCollection";
-  features: GeoJSONFeature[];
-};
-
 export type ProjectionInputMethod = "search" | "file" | "manual";
 
 export interface Projection {

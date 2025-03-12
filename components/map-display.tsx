@@ -4,13 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { Layers } from "lucide-react";
-import type { GeoJSONFeatureCollection } from "@/lib/types";
 import { useMapResizeObserver } from "@/hooks/use-mapresize-observer";
+import { FeatureCollection, GeoJsonProperties, Geometry } from "geojson";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
 interface MapDisplayProps {
-  geoJSON: GeoJSONFeatureCollection | null;
+  geoJSON: FeatureCollection<Geometry, GeoJsonProperties> | null;
 }
 
 export function MapDisplay({ geoJSON }: MapDisplayProps) {
