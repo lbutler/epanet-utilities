@@ -1,231 +1,178 @@
-"use client";
-
-import { useState, useEffect } from "react";
-import { FileUploader } from "@/components/file-uploader";
-import { ProjectionConverter } from "@/components/projection-converter";
-import { MapDisplay } from "@/components/map-display";
-import type { NetworkData, Projection } from "@/lib/types";
-import { FeatureCollection, GeoJsonProperties, Geometry } from "geojson";
+import type React from "react";
+import Link from "next/link";
 import {
-  parseINPFile,
-  convertCoordinates,
-  convertGeoJsonToWGS84,
-  updateINPWithReprojectedData,
-} from "@/lib/network-utils";
-import { toast } from "@/hooks/use-toast";
-import { Toaster } from "@/components/ui/toaster";
+  Github,
+  ExternalLink,
+  ArrowRight,
+  Activity,
+  Globe,
+  FileCheck,
+  Calculator,
+  Layers,
+  Code,
+} from "lucide-react";
 
-import { isLikelyLatLng } from "@/lib/check-projection";
-import { approximateReprojectToLatLng } from "@/lib/approx-reproject";
+// Utility types
+type UtilityType = "internal" | "external";
 
-import { toGeoJson, ToGeoJsonResult } from "@/lib/epanet-geojson";
+interface Utility {
+  id: string;
+  title: string;
+  description: string;
+  link: string;
+  type: UtilityType;
+  icon: React.ReactNode;
+  color: string;
+}
+
+// List of utilities with icons and colors
+const utilities: Utility[] = [
+  {
+    id: "projection-converter",
+    title: "Projection Converter",
+    description:
+      "Convert EPANET network files between different coordinate systems with ease.",
+    link: "/projection-converter",
+    type: "internal",
+    icon: <Globe className="h-6 w-6" />,
+    color: "from-blue-500 to-cyan-500",
+  },
+  {
+    id: "epanet-js",
+    title: "EPANET-JS",
+    description:
+      "JavaScript library for EPANET hydraulic simulations in the browser.",
+    link: "https://github.com/modelcreate/epanet-js",
+    type: "external",
+    icon: <Code className="h-6 w-6" />,
+    color: "from-purple-500 to-indigo-500",
+  },
+  // Example utility cards below
+  //{
+  //  id: "epanet-model-viewer",
+  //  title: "EPANET Model Viewer",
+  //  description:
+  //    "Visualize and explore EPANET models in 3D directly in your browser.",
+  //  link: "https://github.com/modelcreate/epanet-model-viewer",
+  //  type: "external",
+  //  icon: <Layers className="h-6 w-6" />,
+  //  color: "from-emerald-500 to-teal-500",
+  //},
+  //{
+  //  id: "epanet-model-builder",
+  //  title: "EPANET Model Builder",
+  //  description:
+  //    "Create and edit EPANET models with a user-friendly interface.",
+  //  link: "/utilities/model-builder",
+  //  type: "internal",
+  //  icon: <Activity className="h-6 w-6" />,
+  //  color: "from-orange-500 to-amber-500",
+  //},
+  //{
+  //  id: "epanet-file-validator",
+  //  title: "EPANET File Validator",
+  //  description: "Validate your EPANET INP files and check for common errors.",
+  //  link: "/utilities/file-validator",
+  //  type: "internal",
+  //  icon: <FileCheck className="h-6 w-6" />,
+  //  color: "from-red-500 to-rose-500",
+  //},
+  //{
+  //  id: "epanet-unit-converter",
+  //  title: "EPANET Unit Converter",
+  //  description: "Convert between different units used in EPANET models.",
+  //  link: "/utilities/unit-converter",
+  //  type: "internal",
+  //  icon: <Calculator className="h-6 w-6" />,
+  //  color: "from-violet-500 to-fuchsia-500",
+  //},
+];
 
 export default function Home() {
-  const [networkData, setNetworkData] = useState<NetworkData | null>(null);
-  const [epanetGeoJson, setEpanetGeoJson] = useState<ToGeoJsonResult | null>(
-    null
-  );
-  const [sourceProjection, setSourceProjection] = useState<Projection | null>(
-    null
-  );
-  const [targetProjection, setTargetProjection] = useState<Projection | null>(
-    null
-  );
-  const [convertedCoordinates, setConvertedCoordinates] =
-    useState<NetworkData | null>(null);
-  const [mapData, setMapData] = useState<FeatureCollection<
-    Geometry,
-    GeoJsonProperties
-  > | null>(null);
-  const [projections, setProjections] = useState<Projection[]>([]);
-  const [loadingProjections, setLoadingProjections] = useState<boolean>(true);
-
-  useEffect(() => {
-    let ignore = false;
-    fetch("/projections.json")
-      .then((res) => res.json())
-      .then((data) => {
-        if (!ignore) {
-          setProjections(data);
-        }
-      })
-      .catch((err) => console.error("Failed to load projection data:", err))
-      .finally(() => setLoadingProjections(false));
-    return () => {
-      ignore = true;
-    };
-  }, []);
-
-  const handleFileLoaded = async (file: File | null) => {
-    try {
-      const data = await parseINPFile(file);
-      if (data?.inp) {
-        const modelGeojson = toGeoJson(data?.inp);
-        setEpanetGeoJson(modelGeojson);
-        if (isLikelyLatLng(modelGeojson.geojson)) {
-          setMapData(modelGeojson.geojson);
-          setSourceProjection({
-            id: "EPSG:4326",
-            name: "WGS 84",
-            code: "+proj=longlat +datum=WGS84 +no_defs",
-          });
-        } else {
-          const approxGeojson = approximateReprojectToLatLng(
-            modelGeojson.geojson
-          );
-          setMapData(approxGeojson);
-          setTargetProjection({
-            id: "EPSG:4326",
-            name: "WGS 84",
-            code: "+proj=longlat +datum=WGS84 +no_defs",
-          });
-        }
-      }
-
-      setNetworkData(data);
-
-      // Clear map data if no file is selected
-      if (!data || !file) {
-        setMapData(null);
-        setConvertedCoordinates(null);
-        setSourceProjection(null);
-        setTargetProjection(null);
-        return;
-      }
-    } catch (error) {
-      console.error("Error processing file:", error);
-      // Handle error appropriately (e.g., show error message to user)
-      setNetworkData(null);
-      setMapData(null);
-      setConvertedCoordinates(null);
-    }
-  };
-
-  const handleSourceProjectionChange = (projection: Projection | null) => {
-    setSourceProjection(projection);
-
-    if (epanetGeoJson && projection && projection.id !== "EPSG:4326") {
-      const wgs84Coords = convertGeoJsonToWGS84(
-        epanetGeoJson?.geojson,
-        projection.code
-      );
-      if (isLikelyLatLng(wgs84Coords)) {
-        setMapData(wgs84Coords);
-      } else {
-        toast({
-          title: "⚠️ Error!",
-          description: "Projection failed to convert to WGS 84",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
-  const handleTargetProjectionChange = (projection: Projection | null) => {
-    setTargetProjection(projection);
-  };
-
-  const handleConvert = () => {
-    if (!networkData || !sourceProjection || !targetProjection) return;
-
-    try {
-      const convertedNetworkData = convertCoordinates(
-        networkData,
-        sourceProjection.code,
-        targetProjection.code
-      );
-      setConvertedCoordinates(convertedNetworkData);
-    } catch (error) {
-      console.error("Error converting coordinates:", error);
-
-      toast({
-        title: "⚠️ Error!",
-        description: `Error converting coordinates to ${targetProjection.name} \n ${error}`,
-        variant: "destructive",
-      });
-      setConvertedCoordinates(null);
-    }
-  };
-
-  const handleDownload = () => {
-    if (
-      !networkData ||
-      !sourceProjection ||
-      !targetProjection ||
-      !convertedCoordinates
-    )
-      return;
-
-    const isLatLng = targetProjection.id === "EPSG:4326";
-    const numberOfDecimals = isLatLng ? 6 : 2;
-
-    // Generate new INP file with reprojected coordinates
-    const newContent = updateINPWithReprojectedData(
-      networkData.inp,
-      convertedCoordinates,
-      numberOfDecimals
-    );
-
-    // Create and trigger download
-    const blob = new Blob([newContent], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    //networkdata.name ends with .inp revove that and add [targetProjection.id] to the end
-
-    const trimmedName = networkData.name.endsWith(".inp")
-      ? networkData.name.slice(0, -4)
-      : networkData.name;
-    a.download = `${trimmedName}-[${targetProjection.id}].inp`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-      <Toaster />
-      <div className="container mx-auto px-4 py-12">
-        <header className="mb-12 text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-slate-900 dark:text-white mb-3">
-            EPANET Projection Converter
+      <div className="container mx-auto px-4 py-16">
+        <header className="mb-16 text-center">
+          <h1 className="text-5xl font-bold tracking-tight text-slate-900 dark:text-white mb-4">
+            EPANET Utilities
           </h1>
-          <p className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">
-            Convert your EPANET network files between different coordinate
-            systems
+          <p className="text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto mb-8">
+            A collection of tools to help you work with EPANET files and models
           </p>
+          <a
+            href="https://github.com/yourusername/epanet-utilities"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/70 transition-colors shadow-sm"
+          >
+            <Github className="h-4 w-4 mr-2" />
+            View on GitHub
+          </a>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <div className="lg:col-span-4 space-y-6">
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6">
-              <FileUploader onFileLoaded={handleFileLoaded} />
-            </div>
-
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6">
-              <ProjectionConverter
-                sourceProjection={sourceProjection}
-                targetProjection={targetProjection}
-                onSourceChange={handleSourceProjectionChange}
-                onTargetChange={handleTargetProjectionChange}
-                onConvert={handleConvert}
-                onDownload={handleDownload}
-                canConvert={!!networkData}
-                hasConverted={!!convertedCoordinates}
-                projections={projections}
-                loadingProjections={loadingProjections}
-              />
-            </div>
-          </div>
-
-          <div className="lg:col-span-8">
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 h-full">
-              <MapDisplay geoJSON={mapData} />
-            </div>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {utilities.map((utility) => (
+            <UtilityCard key={utility.id} utility={utility} />
+          ))}
         </div>
       </div>
     </main>
+  );
+}
+
+function UtilityCard({ utility }: { utility: Utility }) {
+  const isExternal = utility.type === "external";
+
+  const cardContent = (
+    <div className="h-full bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden transition-all hover:shadow-md hover:translate-y-[-2px] border border-slate-100 dark:border-slate-700">
+      <div className={`h-2 bg-gradient-to-r ${utility.color}`} />
+      <div className="p-6">
+        <div className="flex items-start mb-4">
+          <div
+            className={`p-2 rounded-lg bg-gradient-to-br ${utility.color} text-white`}
+          >
+            {utility.icon}
+          </div>
+          <h2 className="text-xl font-semibold text-slate-900 dark:text-white ml-4 mt-1">
+            {utility.title}
+          </h2>
+        </div>
+        <p className="text-slate-600 dark:text-slate-300 mb-6 min-h-[3rem]">
+          {utility.description}
+        </p>
+        <div className="flex items-center text-blue-600 dark:text-blue-400 font-medium">
+          {isExternal ? (
+            <>
+              Visit Resource
+              <ExternalLink className="h-4 w-4 ml-2" />
+            </>
+          ) : (
+            <>
+              Open Utility
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  if (isExternal) {
+    return (
+      <a
+        href={utility.link}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block h-full"
+      >
+        {cardContent}
+      </a>
+    );
+  }
+
+  return (
+    <Link href={utility.link} className="block h-full">
+      {cardContent}
+    </Link>
   );
 }
