@@ -1,22 +1,22 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Github, Home, Menu, X, Droplets } from "lucide-react"
-import { useState } from "react"
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Github, Home, Menu, X, Droplets } from "lucide-react";
+import { useState } from "react";
 
 interface AppHeaderProps {
-  title?: string
-  githubUrl?: string
+  title?: string;
+  githubUrl?: string;
 }
 
 export function AppHeader({
   title = "EPANET Utilities",
-  githubUrl = "https://github.com/yourusername/epanet-utilities",
+  githubUrl = "https://github.com/modelcreate/epanet-utilities",
 }: AppHeaderProps) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const pathname = usePathname()
-  const isHomePage = pathname === "/"
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
+  const isHomePage = pathname === "/";
 
   return (
     <header className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-b border-slate-200 dark:border-slate-700 sticky top-0 z-50">
@@ -36,7 +36,9 @@ export function AppHeader({
               <div className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white p-1.5 rounded-md mr-2">
                 <Droplets className="h-4 w-4" />
               </div>
-              <span className="text-base font-semibold text-slate-900 dark:text-white">{title}</span>
+              <span className="text-base font-semibold text-slate-900 dark:text-white">
+                {title}
+              </span>
             </Link>
           </div>
 
@@ -88,6 +90,5 @@ export function AppHeader({
         </div>
       )}
     </header>
-  )
+  );
 }
-

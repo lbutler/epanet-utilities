@@ -1,16 +1,6 @@
 import type React from "react";
 import Link from "next/link";
-import {
-  Github,
-  ExternalLink,
-  ArrowRight,
-  Activity,
-  Globe,
-  FileCheck,
-  Calculator,
-  Layers,
-  Code,
-} from "lucide-react";
+import { Github, ExternalLink, ArrowRight, Globe, Code } from "lucide-react";
 
 // Utility types
 type UtilityType = "internal" | "external";
@@ -90,7 +80,7 @@ const utilities: Utility[] = [
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <main>
       <div className="container mx-auto px-4 py-16">
         <header className="mb-16 text-center">
           <h1 className="text-5xl font-bold tracking-tight text-slate-900 dark:text-white mb-4">
@@ -100,7 +90,7 @@ export default function Home() {
             A collection of tools to help you work with EPANET files and models
           </p>
           <a
-            href="https://github.com/yourusername/epanet-utilities"
+            href="https://github.com/modelcreate/epanet-utilities"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/70 transition-colors shadow-sm"
