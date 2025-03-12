@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { AppHeader } from "@/components/app-header";
 import { ThemeProvider } from "next-themes";
+import Script from "next/script";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -29,6 +30,7 @@ export default function RootLayout({
           <div className="container mx-auto px-4 py-16">{children}</div>
         </ThemeProvider>
       </body>
+      <Script src="https://ext.masteringwater.com/latest.js" />
     </html>
   );
 }
