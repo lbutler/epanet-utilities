@@ -13,7 +13,7 @@ interface AppHeaderProps {
 
 export function AppHeader({
   title = "EPANET Utilities",
-  githubUrl = "https://github.com/yourusername/epanet-utilities",
+  githubUrl = "https://github.com/modelcreate/epanet-utilities",
 }: AppHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();

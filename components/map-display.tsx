@@ -167,12 +167,6 @@ export function MapDisplay({ geoJSON }: MapDisplayProps) {
         <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
           Network Visualization
         </h2>
-
-        <div className="flex space-x-2">
-          <button className="px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-700 rounded-md hover:bg-slate-200 dark:hover:bg-slate-600 focus:outline-none">
-            <Layers className="h-4 w-4" />
-          </button>
-        </div>
       </div>
 
       <div className="relative flex-1 min-h-[400px] lg:min-h-[600px] rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
@@ -190,12 +184,6 @@ export function MapDisplay({ geoJSON }: MapDisplayProps) {
         ) : (
           <div ref={mapContainer} className="absolute inset-0 h-full w-full" />
         )}
-      </div>
-
-      <div className="text-xs text-slate-500 dark:text-slate-400">
-        {geoJSON
-          ? "Network data displayed on map"
-          : "Upload a file to view network data"}
       </div>
     </div>
   );
