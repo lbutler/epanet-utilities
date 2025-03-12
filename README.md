@@ -22,7 +22,7 @@ This is a Next.js application. To install dependencies and run the project:
 
 ```sh
 # Clone the repository
-git clone https://github.com/your-username/epanet-utilities.git
+git clone https://github.com/modelcreate/epanet-utilities.git
 cd epanet-utilities
 
 # Install dependencies
