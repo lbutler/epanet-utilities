@@ -5,7 +5,7 @@ import { FeatureCollection, Feature, Point, LineString } from "geojson";
  ******************************************************/
 
 /** A structured parse error for better debugging */
-export interface ParseError {
+interface ParseError {
   line: number; // Which line in the INP file caused the error
   section: string; // The [SECTION] we believe we're in
   message: string; // Explanation of what went wrong
@@ -18,13 +18,13 @@ export interface ToGeoJsonResult {
 }
 
 /** The specialized FeatureCollection we want to return */
-export interface EpanetGeoJSON extends FeatureCollection {
+interface EpanetGeoJSON extends FeatureCollection {
   /** The union of all EPANET features that we parsed */
   features: EpanetFeature[];
 }
 
 /** Any EPANET Feature can be a Node or a Link */
-export type EpanetFeature = NodeFeature | LinkFeature;
+type EpanetFeature = NodeFeature | LinkFeature;
 
 /** Nodes vs. Links */
 type NodeFeature = Junction | Tank | Reservoir;
@@ -51,17 +51,17 @@ interface LinkProperties {
 /****************************************
  * NODE Feature Types (Junction, Tank, Reservoir)
  ****************************************/
-export interface JunctionProperties extends NodeProperties {
+interface JunctionProperties extends NodeProperties {
   category: "Junction";
   elevation: number;
   demand?: number;
   pattern?: string;
 }
-export interface Junction extends Feature<Point, JunctionProperties> {
+interface Junction extends Feature<Point, JunctionProperties> {
   properties: JunctionProperties;
 }
 
-export interface TankProperties extends NodeProperties {
+interface TankProperties extends NodeProperties {
   category: "Tank";
   elevation: number;
   initLevel: number;
@@ -72,16 +72,16 @@ export interface TankProperties extends NodeProperties {
   volCurve: string;
   overflow?: boolean;
 }
-export interface Tank extends Feature<Point, TankProperties> {
+interface Tank extends Feature<Point, TankProperties> {
   properties: TankProperties;
 }
 
-export interface ReservoirProperties extends NodeProperties {
+interface ReservoirProperties extends NodeProperties {
   category: "Reservior";
   head: number;
   pattern?: string;
 }
-export interface Reservoir extends Feature<Point, ReservoirProperties> {
+interface Reservoir extends Feature<Point, ReservoirProperties> {
   properties: ReservoirProperties;
 }
 
@@ -90,7 +90,7 @@ export interface Reservoir extends Feature<Point, ReservoirProperties> {
  ****************************************/
 type PipeStatus = "Open" | "Closed" | "CV";
 
-export interface PipeProperties extends LinkProperties {
+interface PipeProperties extends LinkProperties {
   category: "Pipe";
   length: number;
   diameter: number;
@@ -98,20 +98,20 @@ export interface PipeProperties extends LinkProperties {
   minorLoss: number;
   status?: PipeStatus;
 }
-export interface Pipe extends Feature<LineString, PipeProperties> {
+interface Pipe extends Feature<LineString, PipeProperties> {
   properties: PipeProperties;
 }
 
-export type ValveType = "PRV" | "PSV" | "PBV" | "FCV" | "TCV" | "GPV";
+type ValveType = "PRV" | "PSV" | "PBV" | "FCV" | "TCV" | "GPV";
 
-export interface ValveProperties extends LinkProperties {
+interface ValveProperties extends LinkProperties {
   category: "Valve";
   diameter: number;
   valveType: ValveType;
   setting: number;
   minorLoss: number;
 }
-export interface Valve extends Feature<LineString, ValveProperties> {
+interface Valve extends Feature<LineString, ValveProperties> {
   properties: ValveProperties;
 }
 
@@ -125,17 +125,17 @@ interface BasePumpProperties extends LinkProperties {
 }
 
 /** Pump can be in "Power" mode or "Head" mode. */
-export interface PowerPumpProperties extends BasePumpProperties {
+interface PowerPumpProperties extends BasePumpProperties {
   mode: "Power";
   power: number;
 }
-export interface HeadPumpProperties extends BasePumpProperties {
+interface HeadPumpProperties extends BasePumpProperties {
   mode: "Head";
   head: string;
 }
-export type PumpProperties = PowerPumpProperties | HeadPumpProperties;
+type PumpProperties = PowerPumpProperties | HeadPumpProperties;
 
-export interface Pump extends Feature<LineString, PumpProperties> {
+interface Pump extends Feature<LineString, PumpProperties> {
   properties: PumpProperties;
 }
 

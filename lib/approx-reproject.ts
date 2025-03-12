@@ -18,7 +18,7 @@ interface ApproxReprojectOptions {
 /**
  * Finds the minimum x and y values in a GeoJSON geometry.
  */
-export function findMinXY(geometry: Geometry): [number, number] {
+function findMinXY(geometry: Geometry): [number, number] {
   let minX = Number.POSITIVE_INFINITY;
   let minY = Number.POSITIVE_INFINITY;
 
@@ -62,7 +62,7 @@ export function findMinXY(geometry: Geometry): [number, number] {
 /**
  * Converts a coordinate from local x, y (in meters or feet) to approximate lat/lon.
  */
-export function convertCoord(
+function convertCoord(
   coord: [number, number],
   minX: number,
   minY: number,
@@ -85,7 +85,7 @@ export function convertCoord(
 /**
  * Transforms a geometry by applying approximate reprojection.
  */
-export function transformGeometry(
+function transformGeometry(
   geometry: Geometry,
   minX: number,
   minY: number,
