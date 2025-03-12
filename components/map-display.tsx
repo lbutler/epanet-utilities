@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { Layers } from "lucide-react";
 import { useMapResizeObserver } from "@/hooks/use-mapresize-observer";
 import { FeatureCollection, GeoJsonProperties, Geometry } from "geojson";
 
