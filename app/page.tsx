@@ -12,6 +12,8 @@ import {
   convertGeoJsonToWGS84,
   updateINPWithReprojectedData,
 } from "@/lib/network-utils";
+import { toast } from "@/hooks/use-toast";
+import { Toaster } from "@/components/ui/toaster";
 
 import { isLikelyLatLng } from "@/lib/check-projection";
 import { approximateReprojectToLatLng } from "@/lib/approx-reproject";
@@ -78,8 +80,6 @@ export default function Home() {
             code: "+proj=longlat +datum=WGS84 +no_defs",
           });
         }
-
-        console.log(modelGeojson.geojson);
       }
 
       setNetworkData(data);
@@ -102,7 +102,6 @@ export default function Home() {
   };
 
   const handleSourceProjectionChange = (projection: Projection | null) => {
-    console.log(projection);
     setSourceProjection(projection);
 
     if (epanetGeoJson && projection && projection.id !== "EPSG:4326") {
@@ -110,7 +109,15 @@ export default function Home() {
         epanetGeoJson?.geojson,
         projection.code
       );
-      setMapData(wgs84Coords);
+      if (isLikelyLatLng(wgs84Coords)) {
+        setMapData(wgs84Coords);
+      } else {
+        toast({
+          title: "⚠️ Error!",
+          description: "Projection failed to convert to WGS 84",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -121,12 +128,23 @@ export default function Home() {
   const handleConvert = () => {
     if (!networkData || !sourceProjection || !targetProjection) return;
 
-    const convertedNetworkData = convertCoordinates(
-      networkData,
-      sourceProjection.code,
-      targetProjection.code
-    );
-    setConvertedCoordinates(convertedNetworkData);
+    try {
+      const convertedNetworkData = convertCoordinates(
+        networkData,
+        sourceProjection.code,
+        targetProjection.code
+      );
+      setConvertedCoordinates(convertedNetworkData);
+    } catch (error) {
+      console.error("Error converting coordinates:", error);
+
+      toast({
+        title: "⚠️ Error!",
+        description: `Error converting coordinates to ${targetProjection.name} \n ${error}`,
+        variant: "destructive",
+      });
+      setConvertedCoordinates(null);
+    }
   };
 
   const handleDownload = () => {
@@ -139,7 +157,6 @@ export default function Home() {
       return;
 
     const isLatLng = targetProjection.id === "EPSG:4326";
-    console.log(targetProjection, isLatLng);
     const numberOfDecimals = isLatLng ? 6 : 2;
 
     // Generate new INP file with reprojected coordinates
@@ -168,6 +185,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+      <Toaster />
       <div className="container mx-auto px-4 py-12">
         <header className="mb-12 text-center">
           <h1 className="text-4xl font-bold tracking-tight text-slate-900 dark:text-white mb-3">
