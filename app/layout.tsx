@@ -31,6 +31,11 @@ export default function RootLayout({
         </ThemeProvider>
       </body>
       <Script src="https://ext.masteringwater.com/latest.js" />
+      <Script
+        async
+        data-uid="89c2df9a6e"
+        src="https://mastering-water-models.kit.com/89c2df9a6e/index.js"
+      />
     </html>
   );
 }
