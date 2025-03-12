@@ -12,9 +12,7 @@ A collection of free and open-source utilities for working with EPANET models. T
 
 ![Projection Converter](./public/github/projection-converter.png)
 
-A utility for reprojecting EPANET `.inp` files to different coordinate reference systems (CRS). This tool helps ensure spatial consistency when integrating hydraulic models with GIS or other mapping applications.
-
-Each utility in this collection has its own dedicated README file with installation and usage instructions.
+A utility for reprojecting EPANET `.inp` files to different coordinate reference systems (CRS). This tool helps ensure spatial systems match when integrating hydraulic models with GIS or other mapping applications.
 
 ## Installation & Usage
 
@@ -40,8 +38,6 @@ npm run start
 # Lint the code
 npm run lint
 ```
-
-Refer to each utility’s README for specific setup and usage details.
 
 ## Contributing
 
