@@ -24,20 +24,32 @@ git clone https://github.com/modelcreate/epanet-utilities.git
 cd epanet-utilities
 
 # Install dependencies
-npm install  # or pnpm install / yarn install
+pnpm install  # or npm install / yarn install
 
 # Run the development server
-npm run dev  # or pnpm dev / yarn dev
+pnpm run dev  # or npm dev / yarn dev
 
 # Build the project
-npm run build
+pnpm run build
 
 # Start the production server
-npm run start
+pnpm run start
 
 # Lint the code
-npm run lint
+pnpm run lint
 ```
+
+### Environment Variables
+
+Create a `.env` file in the project root. You can copy and rename the `.env.example` file to `.env.local`.
+
+Make sure the following line is in your `.env.local` file:
+
+```sh
+NEXT_PUBLIC_MAPBOX_TOKEN=your_token_here
+```
+
+Obtain a token from your [Mapbox account](https://account.mapbox.com/).
 
 ## Contributing
 
