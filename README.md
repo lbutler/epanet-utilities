@@ -43,6 +43,15 @@ npm run lint
 
 Contributions are welcome! If you have ideas for new utilities or improvements to existing ones, feel free to open an issue or submit a pull request.
 
+### Future Tools
+
+- Set elevations, from worldwide DEM or ASCII file
+- Extract GIS
+- Export results, report and bin file
+- Fire flow simulation
+- .net file conversion
+- compare .bin files between version of EPANET
+
 ## License
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.
