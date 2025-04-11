@@ -11,9 +11,12 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import type { PumpCurveGraphProps, PumpPoint } from "./types/pump"; // Adjust path
+import type { PumpCurveGraphProps } from "./types/pump"; // Adjust path
 
-const PumpCurveGraph: React.FC<PumpCurveGraphProps> = ({ data }) => {
+const PumpCurveGraph: React.FC<PumpCurveGraphProps> = ({
+  data,
+  multiPoint,
+}) => {
   // Filter and sort valid data points for plotting
   const validData = useMemo(() => {
     return data
@@ -31,7 +34,7 @@ const PumpCurveGraph: React.FC<PumpCurveGraphProps> = ({ data }) => {
       .sort((a, b) => a.flow - b.flow);
   }, [data]);
 
-  if (validData.length < 2) {
+  if ((validData.length < 3 && !multiPoint) || validData.length < 2) {
     return (
       <div className="h-[300px] flex items-center justify-center bg-gray-50 border border-dashed border-gray-300 rounded-md mt-4">
         <p className="text-center text-gray-500 italic">
@@ -46,8 +49,6 @@ const PumpCurveGraph: React.FC<PumpCurveGraphProps> = ({ data }) => {
   // Calculate domains safely
   const maxHead =
     validData.length > 0 ? Math.max(0, ...validData.map((p) => p.head)) : 10;
-  const maxFlow =
-    validData.length > 0 ? Math.max(0, ...validData.map((p) => p.flow)) : 10;
 
   return (
     <>

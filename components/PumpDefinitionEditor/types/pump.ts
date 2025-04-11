@@ -53,6 +53,7 @@ export type PumpDefinition =
 export interface PumpCurveGraphProps {
   // Use PumpPoint[] which allows nulls, graph component will filter
   data: PumpPoint[];
+  multiPoint: boolean;
 }
 
 // Validation Result Type

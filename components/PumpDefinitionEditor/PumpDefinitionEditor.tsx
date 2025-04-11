@@ -1,4 +1,3 @@
-// src/components/PumpDefinitionEditor/PumpDefinitionEditor.tsx
 "use client";
 
 import React, { useState, useMemo, useCallback, useEffect } from "react";
@@ -8,12 +7,11 @@ import type {
   PumpDefinition,
   PumpType,
   PumpPoint,
-  ConstantPowerPump,
-  OnePointPump,
-  ThreePointPump,
   MultipointPump,
   PumpCurveFitResult,
   ValidationResult,
+  InputChangeHandler,
+  MultipointChangeHandler,
 } from "./types/pump"; // Adjust path
 
 // Logic/Utils
@@ -165,7 +163,7 @@ const PumpDefinitionEditor: React.FC<PumpDefinitionEditorProps> = ({
 
       setPumpDefinition((prevDef) => {
         // Shallow copy is okay for the top level
-        const updatedPumpDraft = { ...prevDef };
+        const updatedPumpDraft: PumpDefinition = { ...prevDef };
 
         // Update nested properties carefully
         const parts = fieldPath.split(".");
@@ -241,6 +239,42 @@ const PumpDefinitionEditor: React.FC<PumpDefinitionEditorProps> = ({
 
   // --- Save Handler ---
   const handleInternalSave = () => {
+    if (
+      pumpDefinition.type === "multipoint" &&
+      (fitResult?.success ||
+        pumpDefinition.points.length == 3 ||
+        pumpDefinition.points.length == 1)
+    ) {
+      const userChoice = window.confirm(
+        "You have defined multiple points. Would you like to switch to a 1-point or 3-point curve?"
+      );
+
+      if (userChoice) {
+        // Automatically switch to 3-point if enough points are defined
+        if (pumpDefinition.points.length >= 3) {
+          const [shutoffPoint, designPoint, maxOperatingPoint] =
+            pumpDefinition.points.slice(0, 3);
+          setPumpDefinition({
+            type: "threePoint",
+            shutoffHead: shutoffPoint.head,
+            designPoint: { flow: designPoint.flow, head: designPoint.head },
+            maxOperatingPoint: {
+              flow: maxOperatingPoint.flow,
+              head: maxOperatingPoint.head,
+            },
+          });
+        } else {
+          // Otherwise, switch to 1-point using the first point
+          const designPoint = pumpDefinition.points[0];
+          setPumpDefinition({
+            type: "onePoint",
+            designPoint: { flow: designPoint.flow, head: designPoint.head },
+          });
+        }
+        return; // Exit early to allow the user to adjust the new definition
+      }
+    }
+
     // Perform final checks before calling the onSave prop
     if (!validationResult.isValid) {
       alert(
@@ -407,7 +441,10 @@ const PumpDefinitionEditor: React.FC<PumpDefinitionEditorProps> = ({
             <div className="flex-grow p-4 border rounded-md bg-white shadow-sm min-h-[380px]">
               {" "}
               {/* Increased min height slightly */}
-              <PumpCurveGraph data={graphData} />
+              <PumpCurveGraph
+                data={graphData}
+                multiPoint={pumpDefinition.type === "multipoint"}
+              />
             </div>
           )}
         </div>

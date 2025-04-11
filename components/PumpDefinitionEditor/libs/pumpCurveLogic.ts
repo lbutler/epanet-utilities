@@ -146,7 +146,7 @@ export function fitPumpCurve(
                 break; // Exit loop
               }
             }
-          } catch (e) {
+          } catch {
             /* ignore math errors here */
           }
         }
@@ -163,7 +163,7 @@ export function fitPumpCurve(
 
     try {
       c = Math.log(ratio_h) / Math.log(ratio_q);
-    } catch (e) {
+    } catch {
       // console.error("Math error calculating C:", e);
       break; // Exit loop on math error (e.g., log of zero/negative)
     }
@@ -175,7 +175,7 @@ export function fitPumpCurve(
     let q1_pow_c: number;
     try {
       q1_pow_c = Math.pow(q1, c);
-    } catch (e) {
+    } catch {
       // console.error("Math error calculating q1^c:", e);
       break; // Exit loop on math error (e.g., overflow)
     }
@@ -207,7 +207,7 @@ export function fitPumpCurve(
       // This branch shouldn't be hit for 3-point as q0=0
       try {
         a1 = h0 - bInternal * Math.pow(q0, c);
-      } catch (e) {
+      } catch {
         // console.error("Math error calculating a1:", e);
         break; // Exit loop on math error
       }
@@ -259,7 +259,7 @@ export function fitPumpCurve(
     if (finalB > TINY && c !== 0 && a > 0) {
       try {
         qMaxTheoretical = Math.pow(a / finalB, 1.0 / c);
-      } catch (e) {
+      } catch {
         // console.warn("Could not calculate theoretical max flow, using max input flow.", e);
         qMaxTheoretical = q2; // Fallback to max input flow
       }
@@ -289,7 +289,7 @@ export function fitPumpCurve(
         } else {
           try {
             h_calc = a - finalB * Math.pow(q, c);
-          } catch (e) {
+          } catch {
             // console.warn(`Math error calculating head at q=${q}`, e);
             h_calc = -Infinity; // Indicate calculation failure
           }
