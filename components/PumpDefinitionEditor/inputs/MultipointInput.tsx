@@ -66,7 +66,6 @@ const MultipointInput: React.FC<MultipointInputProps> = ({
         <tbody>
           {pumpDefinition.points.map((point, index) => (
             <tr key={`point-${index}`}>
-              {" "}
               {/* Prefer more stable keys if points have unique IDs */}
               <td className="p-2 border text-center text-gray-500">
                 {index + 1}

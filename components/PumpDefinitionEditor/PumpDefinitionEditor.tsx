@@ -7,11 +7,11 @@ import type {
   PumpDefinition,
   PumpType,
   PumpPoint,
-  MultipointPump,
   PumpCurveFitResult,
   ValidationResult,
   InputChangeHandler,
   MultipointChangeHandler,
+  OnePointPump,
 } from "./types/pump"; // Adjust path
 
 // Logic/Utils
@@ -30,9 +30,9 @@ import ThreePointInput from "./inputs/ThreePointInput";
 import MultipointInput from "./inputs/MultipointInput";
 
 // Initial state for a new pump definition (e.g., multipoint default)
-const initialPumpState: MultipointPump = {
-  type: "multipoint",
-  points: [{ flow: 0, head: null }], // Start with shutoff point row
+const initialPumpState: OnePointPump = {
+  type: "onePoint",
+  designPoint: { flow: null, head: null },
 };
 
 // Props for the editor component (e.g., initial data, onSave callback)
@@ -167,6 +167,7 @@ const PumpDefinitionEditor: React.FC<PumpDefinitionEditorProps> = ({
 
         // Update nested properties carefully
         const parts = fieldPath.split(".");
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let currentLevel: any = updatedPumpDraft;
 
         for (let i = 0; i < parts.length - 1; i++) {
@@ -460,10 +461,10 @@ const PumpDefinitionEditor: React.FC<PumpDefinitionEditorProps> = ({
             onChange={handleTypeChange}
             className={`flex-grow p-2 border border-gray-300 rounded-md bg-white shadow-sm focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out`}
           >
-            <option value="multipoint">Multiple Point</option>
-            <option value="threePoint">Standard (3 Point)</option>
-            <option value="onePoint">Design Point (1 point)</option>
             <option value="constantPower">Constant Power</option>
+            <option value="onePoint">Design Point (1 point)</option>
+            <option value="threePoint">Standard (3 Point)</option>
+            <option value="multipoint">Multiple Point</option>
           </select>
         </div>
 
