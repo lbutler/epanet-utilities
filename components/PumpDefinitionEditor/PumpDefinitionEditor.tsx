@@ -215,6 +215,42 @@ const PumpDefinitionEditor: React.FC<PumpDefinitionEditorProps> = ({
     []
   );
 
+  // --- Handler to Sort Points (Called on Blur) ---
+  const handleSortPoints = useCallback(() => {
+    setPumpDefinition((prevDef) => {
+      if (prevDef.type !== "multipoint") return prevDef;
+
+      // Make a mutable copy before sorting
+      const pointsToSort = [...prevDef.points];
+
+      // Sort points by flow in ascending order, keeping nulls/invalid entries potentially at the end
+      const sortedPoints = pointsToSort.sort((a, b) => {
+        const flowA = a.flow;
+        const flowB = b.flow;
+
+        // Handle nulls: Place them at the end
+        if (flowA === null && flowB === null) return 0; // Keep original relative order of nulls
+        if (flowA === null) return 1; // a (null) comes after b
+        if (flowB === null) return -1; // b (null) comes after a
+
+        // Handle valid numbers
+        if (isNaN(flowA) && isNaN(flowB)) return 0; // Keep original relative order of NaNs (shouldn't happen with validation)
+        if (isNaN(flowA)) return 1; // a (NaN) comes after b
+        if (isNaN(flowB)) return -1; // b (NaN) comes after a
+
+        // Both are valid numbers
+        return flowA - flowB;
+      });
+
+      // Only update state if the order actually changed to avoid unnecessary re-renders
+      if (JSON.stringify(prevDef.points) !== JSON.stringify(sortedPoints)) {
+        return { ...prevDef, points: sortedPoints };
+      }
+
+      return prevDef; // No change in order
+    });
+  }, []); // No dependencies
+
   const handleAddMultipointRow = useCallback(() => {
     setPumpDefinition((prevDef) => {
       if (prevDef.type !== "multipoint") return prevDef;
@@ -389,6 +425,7 @@ const PumpDefinitionEditor: React.FC<PumpDefinitionEditorProps> = ({
             onPointChange={handleMultipointChange}
             onAddPoint={handleAddMultipointRow}
             onDeletePoint={handleDeleteMultipointRow}
+            onSortPoints={handleSortPoints}
           />
         );
       default:
