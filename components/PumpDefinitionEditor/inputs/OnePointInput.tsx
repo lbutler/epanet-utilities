@@ -22,7 +22,7 @@ const OnePointInput: React.FC<OnePointInputProps> = ({
   // Calculate derived points for display
   const calculatedPoints = useMemo(() => {
     return calculateOnePointCurvePoints(pumpDefinition.designPoint);
-  }, [pumpDefinition.designPoint]);
+  }, [pumpDefinition]);
 
   const [shutoff, , maxOp] = calculatedPoints;
 
