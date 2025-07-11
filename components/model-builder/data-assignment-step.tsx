@@ -92,7 +92,10 @@ export function DataAssignmentStep({
 
         {/* Network Preview Section */}
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 h-[450px]">
-          <ModelBuilderMap assignedGisData={assignedGisData} />
+          <ModelBuilderMap
+            assignedGisData={assignedGisData}
+            selectedProjection={selectedProjection}
+          />
         </div>
       </div>
 

@@ -4,18 +4,23 @@ import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useMapResizeObserver } from "@/hooks/use-mapresize-observer";
-import type { AssignedGisData } from "@/lib/types";
+import type { AssignedGisData, Projection } from "@/lib/types";
 import { ELEMENT_COLORS } from "@/lib/model-builder-constants";
 import { isLikelyLatLng } from "@/lib/check-projection";
 import { approximateReprojectToLatLng } from "@/lib/approx-reproject";
+import { convertGeoJsonToWGS84Generic } from "@/lib/network-utils";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
 interface ModelBuilderMapProps {
   assignedGisData: AssignedGisData;
+  selectedProjection?: Projection | null;
 }
 
-export function ModelBuilderMap({ assignedGisData }: ModelBuilderMapProps) {
+export function ModelBuilderMap({
+  assignedGisData,
+  selectedProjection,
+}: ModelBuilderMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -95,8 +100,28 @@ export function ModelBuilderMap({ assignedGisData }: ModelBuilderMapProps) {
     let processedGeoJSONArray: (typeof geoJSONArray)[0][];
 
     if (needsReprojection) {
-      // Reproject all data together using global min/max values
-      processedGeoJSONArray = approximateReprojectToLatLng(geoJSONArray);
+      if (selectedProjection && selectedProjection.id !== "EPSG:4326") {
+        // Use precise projection when available
+        processedGeoJSONArray = geoJSONArray.map((geoJSON) => {
+          if (!geoJSON) return null;
+          try {
+            const reprojected = convertGeoJsonToWGS84Generic(
+              geoJSON,
+              selectedProjection.code,
+            );
+            return isLikelyLatLng(reprojected) ? reprojected : geoJSON;
+          } catch (error) {
+            console.warn(
+              "Failed to reproject with selected projection, using original:",
+              error,
+            );
+            return geoJSON;
+          }
+        });
+      } else {
+        // Fallback to approximate reprojection when no projection is selected
+        processedGeoJSONArray = approximateReprojectToLatLng(geoJSONArray);
+      }
     } else {
       // No reprojection needed, use original data
       processedGeoJSONArray = geoJSONArray;
@@ -225,7 +250,7 @@ export function ModelBuilderMap({ assignedGisData }: ModelBuilderMapProps) {
         map.current.fitBounds(bounds, { padding: 20, duration: 0 });
       }, 100);
     }
-  }, [assignedGisData, mapLoaded]);
+  }, [assignedGisData, selectedProjection, mapLoaded]);
 
   const assignedElementsCount = Object.keys(assignedGisData).length;
 

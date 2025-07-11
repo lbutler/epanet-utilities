@@ -1,10 +1,15 @@
 import type { NetworkData } from "./types";
-import type { EpanetGeoJSON, EpanetFeature } from "./epanet-geojson";
+import type { ToGeoJsonResult } from "./epanet-geojson";
 import proj4 from "proj4";
+import { FeatureCollection, Feature, Geometry } from "geojson";
+
+// Local type definitions for the EPANET conversion function
+type EpanetGeoJSON = FeatureCollection;
+type EpanetFeature = Feature;
 
 // Parse INP file and extract coordinates
 export async function parseINPFile(
-  file: File | null
+  file: File | null,
 ): Promise<NetworkData | null> {
   if (!file) {
     return null;
@@ -35,7 +40,7 @@ export async function parseINPFile(
 
 // Extract coordinates and vertices from an INP file string
 function extractGeometryData(
-  inpContent: string
+  inpContent: string,
 ): [Record<string, [number, number]>, Record<string, [number, number][]>] {
   const coordinates: Record<string, [number, number]> = {};
   const vertices: Record<string, [number, number][]> = {};
@@ -71,7 +76,7 @@ function extractGeometryData(
 export function updateINPWithReprojectedData(
   inpContent: string,
   networkData: NetworkData,
-  decimalPrecision: number = 4
+  decimalPrecision: number = 4,
 ): string {
   const lines = inpContent.split("\n");
   let section: string | null = null;
@@ -109,7 +114,7 @@ export function updateINPWithReprojectedData(
     updatedLines.push("\n[COORDINATES]");
     for (const [id, [x, y]] of Object.entries(networkData.coordinates)) {
       updatedLines.push(
-        `${id} ${x.toFixed(decimalPrecision)} ${y.toFixed(decimalPrecision)}`
+        `${id} ${x.toFixed(decimalPrecision)} ${y.toFixed(decimalPrecision)}`,
       );
     }
   }
@@ -121,8 +126,8 @@ export function updateINPWithReprojectedData(
       for (const [x, y] of points) {
         updatedLines.push(
           `${linkId} ${x.toFixed(decimalPrecision)} ${y.toFixed(
-            decimalPrecision
-          )}`
+            decimalPrecision,
+          )}`,
         );
       }
     }
@@ -137,7 +142,7 @@ export function updateINPWithReprojectedData(
 export function convertCoordinates(
   networkData: NetworkData,
   sourceProjection: string,
-  targetProjection: string
+  targetProjection: string,
 ): NetworkData {
   const transformedCoordinates: Record<string, [number, number]> = {};
   const transformedVertices: Record<string, [number, number][]> = {};
@@ -151,7 +156,7 @@ export function convertCoordinates(
   // Convert link vertices
   for (const [linkId, points] of Object.entries(networkData.vertices)) {
     transformedVertices[linkId] = points.map(([x, y]) =>
-      proj4(sourceProjection, targetProjection, [x, y])
+      proj4(sourceProjection, targetProjection, [x, y]),
     );
   }
 
@@ -171,7 +176,7 @@ export function convertCoordinates(
  */
 export function convertGeoJsonToWGS84(
   geojson: EpanetGeoJSON,
-  sourceProjection: string
+  sourceProjection: string,
 ): EpanetGeoJSON {
   return {
     ...geojson,
@@ -193,7 +198,7 @@ export function convertGeoJsonToWGS84(
       } else if (geometry.type === "LineString") {
         // Convert each vertex in the polyline
         const convertedCoordinates = geometry.coordinates.map(([x, y]) =>
-          proj4(sourceProjection, "EPSG:4326", [x, y])
+          proj4(sourceProjection, "EPSG:4326", [x, y]),
         );
 
         return {
@@ -212,4 +217,126 @@ export function convertGeoJsonToWGS84(
       return feature;
     }),
   };
+}
+
+/**
+ * Converts a generic GeoJSON FeatureCollection to WGS84.
+ * @param geojson The input GeoJSON FeatureCollection with a different projection.
+ * @param sourceProjection The source projection string.
+ * @returns A new GeoJSON FeatureCollection with all coordinates converted to WGS84.
+ */
+export function convertGeoJsonToWGS84Generic(
+  geojson: FeatureCollection,
+  sourceProjection: string,
+): FeatureCollection {
+  return {
+    ...geojson,
+    features: geojson.features.map((feature: Feature) => {
+      if (!feature.geometry) return feature;
+
+      const convertedGeometry = convertGeometry(
+        feature.geometry,
+        sourceProjection,
+      );
+
+      return {
+        ...feature,
+        geometry: convertedGeometry,
+      };
+    }),
+  };
+}
+
+/**
+ * Converts a GeoJSON geometry to WGS84 coordinates.
+ * @param geometry The geometry to convert
+ * @param sourceProjection The source projection string
+ * @returns The converted geometry
+ */
+function convertGeometry(
+  geometry: Geometry,
+  sourceProjection: string,
+): Geometry {
+  if (!geometry) return geometry;
+
+  switch (geometry.type) {
+    case "Point":
+      const [x, y] = geometry.coordinates as [number, number];
+      const [lon, lat] = proj4(sourceProjection, "EPSG:4326", [x, y]);
+      return {
+        ...geometry,
+        coordinates: [lon, lat],
+      };
+
+    case "LineString":
+      const convertedCoordinates = (
+        geometry.coordinates as [number, number][]
+      ).map(([x, y]: [number, number]) =>
+        proj4(sourceProjection, "EPSG:4326", [x, y]),
+      );
+      return {
+        ...geometry,
+        coordinates: convertedCoordinates,
+      };
+
+    case "Polygon":
+      const convertedRings = (geometry.coordinates as [number, number][][]).map(
+        (ring: [number, number][]) =>
+          ring.map(([x, y]: [number, number]) =>
+            proj4(sourceProjection, "EPSG:4326", [x, y]),
+          ),
+      );
+      return {
+        ...geometry,
+        coordinates: convertedRings,
+      };
+
+    case "MultiPoint":
+      const convertedPoints = (geometry.coordinates as [number, number][]).map(
+        ([x, y]: [number, number]) =>
+          proj4(sourceProjection, "EPSG:4326", [x, y]),
+      );
+      return {
+        ...geometry,
+        coordinates: convertedPoints,
+      };
+
+    case "MultiLineString":
+      const convertedLines = (geometry.coordinates as [number, number][][]).map(
+        (line: [number, number][]) =>
+          line.map(([x, y]: [number, number]) =>
+            proj4(sourceProjection, "EPSG:4326", [x, y]),
+          ),
+      );
+      return {
+        ...geometry,
+        coordinates: convertedLines,
+      };
+
+    case "MultiPolygon":
+      const convertedPolygons = (
+        geometry.coordinates as [number, number][][][]
+      ).map((polygon: [number, number][][]) =>
+        polygon.map((ring: [number, number][]) =>
+          ring.map(([x, y]: [number, number]) =>
+            proj4(sourceProjection, "EPSG:4326", [x, y]),
+          ),
+        ),
+      );
+      return {
+        ...geometry,
+        coordinates: convertedPolygons,
+      };
+
+    case "GeometryCollection":
+      return {
+        ...geometry,
+        geometries: geometry.geometries.map((geom: Geometry) =>
+          convertGeometry(geom, sourceProjection),
+        ),
+      };
+
+    default:
+      return geometry;
+  }
 }

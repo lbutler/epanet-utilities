@@ -5,17 +5,25 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useMapResizeObserver } from "@/hooks/use-mapresize-observer";
 import { FeatureCollection, GeoJsonProperties, Geometry } from "geojson";
+import { convertGeoJsonToWGS84Generic } from "@/lib/network-utils";
+import { isLikelyLatLng } from "@/lib/check-projection";
+import type { Projection } from "@/lib/types";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
 
 interface MapDisplayProps {
   geoJSON: FeatureCollection<Geometry, GeoJsonProperties> | null;
+  projection?: Projection | null;
 }
 
-export function MapDisplay({ geoJSON }: MapDisplayProps) {
+export function MapDisplay({ geoJSON, projection }: MapDisplayProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [processedGeoJSON, setProcessedGeoJSON] = useState<FeatureCollection<
+    Geometry,
+    GeoJsonProperties
+  > | null>(null);
 
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
@@ -50,6 +58,42 @@ export function MapDisplay({ geoJSON }: MapDisplayProps) {
 
   useMapResizeObserver(map, mapContainer);
 
+  // Handle projection reprojection
+  useEffect(() => {
+    if (!geoJSON) {
+      setProcessedGeoJSON(null);
+      return;
+    }
+
+    // Check if data needs reprojection
+    const needsReprojection = !isLikelyLatLng(geoJSON);
+
+    if (needsReprojection && projection && projection.id !== "EPSG:4326") {
+      try {
+        const reprojectedData = convertGeoJsonToWGS84Generic(
+          geoJSON,
+          projection.code,
+        );
+
+        // Verify the reprojection was successful
+        if (isLikelyLatLng(reprojectedData)) {
+          setProcessedGeoJSON(reprojectedData);
+        } else {
+          console.warn(
+            "Reprojection failed - data still not in lat/lng format",
+          );
+          setProcessedGeoJSON(geoJSON); // Use original data as fallback
+        }
+      } catch (error) {
+        console.error("Error reprojecting data:", error);
+        setProcessedGeoJSON(geoJSON); // Use original data as fallback
+      }
+    } else {
+      // No reprojection needed, use original data
+      setProcessedGeoJSON(geoJSON);
+    }
+  }, [geoJSON, projection]);
+
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
 
@@ -64,7 +108,7 @@ export function MapDisplay({ geoJSON }: MapDisplayProps) {
       map.current.removeSource("network");
     }
 
-    if (!geoJSON) {
+    if (!processedGeoJSON) {
       setTimeout(() => {
         if (map.current) {
           map.current.setZoom(0);
@@ -80,7 +124,7 @@ export function MapDisplay({ geoJSON }: MapDisplayProps) {
     // Add new source and layers
     map.current.addSource("network", {
       type: "geojson",
-      data: geoJSON,
+      data: processedGeoJSON,
     });
 
     // Add lines
@@ -118,8 +162,8 @@ export function MapDisplay({ geoJSON }: MapDisplayProps) {
       minzoom: 13,
     });
 
-    // Compute bounds from geoJSON data
-    const coordinates = geoJSON.features.flatMap((feature) => {
+    // Compute bounds from processedGeoJSON data
+    const coordinates = processedGeoJSON.features.flatMap((feature) => {
       if (feature.geometry.type === "Point") {
         return [feature.geometry.coordinates as [number, number]];
       } else if (feature.geometry.type === "LineString") {
@@ -131,7 +175,7 @@ export function MapDisplay({ geoJSON }: MapDisplayProps) {
     if (coordinates.length > 0) {
       const bounds = coordinates.reduce(
         (bounds, coord) => bounds.extend(coord as mapboxgl.LngLatLike),
-        new mapboxgl.LngLatBounds(coordinates[0], coordinates[0])
+        new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]),
       );
 
       const expandFactor = 1; // Adjust this factor if needed
@@ -146,7 +190,7 @@ export function MapDisplay({ geoJSON }: MapDisplayProps) {
         [
           northEast.lng + expandFactor * (northEast.lng - southWest.lng),
           northEast.lat + expandFactor * (northEast.lat - southWest.lat),
-        ]
+        ],
       );
 
       // **Set expanded max bounds to prevent excessive panning**
@@ -158,7 +202,7 @@ export function MapDisplay({ geoJSON }: MapDisplayProps) {
         map.current.fitBounds(bounds, { padding: 50, duration: 0 });
       }, 100);
     }
-  }, [geoJSON, mapLoaded]);
+  }, [processedGeoJSON, mapLoaded]);
 
   return (
     <div className="space-y-4 h-full flex flex-col">
