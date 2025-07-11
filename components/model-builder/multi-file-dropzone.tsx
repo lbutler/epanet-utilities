@@ -105,13 +105,13 @@ export function MultiFileDropzone({ onFilesLoaded, uploadedFiles }: MultiFileDro
   };
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+    <div className="flex flex-col h-full">
+      <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4 flex-shrink-0">
         Upload GeoJSON Files
       </h2>
 
       <div
-        className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors flex-shrink-0 ${
           isDragging
             ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
             : "border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/30"
@@ -155,18 +155,18 @@ export function MultiFileDropzone({ onFilesLoaded, uploadedFiles }: MultiFileDro
       </div>
 
       {error && (
-        <div className="flex items-center text-red-600 dark:text-red-400 text-sm">
+        <div className="flex items-center text-red-600 dark:text-red-400 text-sm mt-3 flex-shrink-0">
           <AlertCircle className="h-4 w-4 mr-1" />
           <span>{error}</span>
         </div>
       )}
 
       {uploadedFiles.length > 0 && (
-        <div className="space-y-2">
-          <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300">
+        <div className="mt-4 flex-1 flex flex-col min-h-0">
+          <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex-shrink-0">
             Uploaded Files ({uploadedFiles.length})
           </h3>
-          <div className="space-y-2 max-h-60 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto space-y-2 pr-2">
             {uploadedFiles.map((file) => (
               <div
                 key={file.id}
@@ -177,7 +177,7 @@ export function MultiFileDropzone({ onFilesLoaded, uploadedFiles }: MultiFileDro
                   e.dataTransfer.effectAllowed = 'move';
                 }}
               >
-                <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-3" />
+                <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-3 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
                     {file.name}
@@ -188,7 +188,7 @@ export function MultiFileDropzone({ onFilesLoaded, uploadedFiles }: MultiFileDro
                 </div>
                 <button
                   onClick={() => removeFile(file.id)}
-                  className="ml-4 p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full"
+                  className="ml-4 p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full flex-shrink-0"
                   aria-label="Remove file"
                 >
                   <X className="h-4 w-4 text-slate-500 dark:text-slate-400" />

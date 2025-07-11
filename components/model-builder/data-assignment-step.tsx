@@ -27,55 +27,66 @@ export function DataAssignmentStep({
   const hasAssignedFiles = Object.keys(assignedGisData).length > 0;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-      {/* Left Column - File Upload and Assignment */}
-      <div className="lg:col-span-5 space-y-6">
+    <div className="space-y-8">
+      {/* Top Section - Upload and Preview Side by Side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* File Upload Section */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 h-96 flex flex-col">
           <MultiFileDropzone
             onFilesLoaded={onFilesUploaded}
             uploadedFiles={uploadedFiles}
           />
         </div>
 
-        {/* Element Assignment Section */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-6">
+        {/* Network Preview Section */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 h-96">
+          <ModelBuilderMap assignedGisData={assignedGisData} />
+        </div>
+      </div>
+
+      {/* Bottom Section - Element Assignment Grid */}
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
             Assign Files to Elements
           </h2>
-          
-          <div className="space-y-4">
-            {EPANET_ELEMENTS.map((element) => {
-              const assignedFile = assignedGisData[element.key] 
-                ? {
-                    // Create a simplified UploadedFile representation
-                    id: `assigned_${element.key}`,
-                    name: `${element.name} Data`,
-                    geometryType: assignedGisData[element.key]?.features[0]?.geometry?.type || 'Unknown',
-                    featureCount: assignedGisData[element.key]?.features?.length || 0,
-                    file: null as any,
-                    geoJSON: assignedGisData[element.key]!
-                  }
-                : null;
-
-              return (
-                <ElementAssignmentCard
-                  key={element.key}
-                  elementType={element.key}
-                  elementName={element.name}
-                  assignedFile={assignedFile}
-                  uploadedFiles={uploadedFiles}
-                  onAssign={onFileAssignment}
-                  onUnassign={onFileUnassignment}
-                  validGeometryTypes={element.geometryTypes}
-                />
-              );
-            })}
+          <div className="text-sm text-slate-600 dark:text-slate-400">
+            {Object.keys(assignedGisData).length} of {EPANET_ELEMENTS.length} elements assigned
           </div>
+        </div>
+        
+        {/* Responsive Grid - 3 columns on large screens, 2 on medium, 1 on small */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+          {EPANET_ELEMENTS.map((element) => {
+            const assignedFile = assignedGisData[element.key] 
+              ? {
+                  // Create a simplified UploadedFile representation
+                  id: `assigned_${element.key}`,
+                  name: `${element.name} Data`,
+                  geometryType: assignedGisData[element.key]?.features[0]?.geometry?.type || 'Unknown',
+                  featureCount: assignedGisData[element.key]?.features?.length || 0,
+                  file: null as any,
+                  geoJSON: assignedGisData[element.key]!
+                }
+              : null;
+
+            return (
+              <ElementAssignmentCard
+                key={element.key}
+                elementType={element.key}
+                elementName={element.name}
+                assignedFile={assignedFile}
+                uploadedFiles={uploadedFiles}
+                onAssign={onFileAssignment}
+                onUnassign={onFileUnassignment}
+                validGeometryTypes={element.geometryTypes}
+              />
+            );
+          })}
         </div>
 
         {/* Next Button */}
-        <div className="flex justify-end">
+        <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-700">
           <button
             onClick={onNext}
             disabled={!hasAssignedFiles}
@@ -90,13 +101,6 @@ export function DataAssignmentStep({
             <span>Next: Map Attributes</span>
             <ChevronRight className="h-4 w-4" />
           </button>
-        </div>
-      </div>
-
-      {/* Right Column - Map Display */}
-      <div className="lg:col-span-7">
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 h-full">
-          <ModelBuilderMap assignedGisData={assignedGisData} />
         </div>
       </div>
     </div>

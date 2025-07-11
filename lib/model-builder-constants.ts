@@ -29,7 +29,7 @@ export const EPANET_ELEMENTS: EpanetElementDefinition[] = [
   {
     key: 'valves',
     name: 'Valves',
-    geometryTypes: ['LineString', 'MultiLineString'],
+    geometryTypes: ['Point', 'MultiPoint'],
     requiredAttributes: ['Id', 'Node1', 'Node2', 'Diameter', 'Type', 'Setting'],
     optionalAttributes: ['MinorLoss', 'Comment'],
     defaultValues: {
@@ -42,7 +42,7 @@ export const EPANET_ELEMENTS: EpanetElementDefinition[] = [
   {
     key: 'pumps',
     name: 'Pumps',
-    geometryTypes: ['LineString', 'MultiLineString'],
+    geometryTypes: ['Point', 'MultiPoint'],
     requiredAttributes: ['Id', 'Node1', 'Node2'],
     optionalAttributes: ['Parameters', 'Comment'],
     defaultValues: {

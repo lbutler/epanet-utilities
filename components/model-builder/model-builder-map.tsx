@@ -105,8 +105,8 @@ export function ModelBuilderMap({ assignedGisData }: ModelBuilderMapProps) {
 
       const color = ELEMENT_COLORS[elementType as keyof typeof ELEMENT_COLORS] || '#3b82f6';
 
-      // Add line layer for linear features
-      if (['pipes', 'valves', 'pumps'].includes(elementType)) {
+      // Add line layer for linear features (only pipes now)
+      if (elementType === 'pipes') {
         map.current!.addLayer({
           id: `${elementType}-lines`,
           type: "line",
@@ -118,8 +118,8 @@ export function ModelBuilderMap({ assignedGisData }: ModelBuilderMapProps) {
         });
       }
 
-      // Add point layer for point features
-      if (['nodes', 'tanks', 'reservoirs'].includes(elementType)) {
+      // Add point layer for point features (all except pipes)
+      if (elementType !== 'pipes') {
         map.current!.addLayer({
           id: `${elementType}-points`,
           type: "circle",
@@ -178,7 +178,7 @@ export function ModelBuilderMap({ assignedGisData }: ModelBuilderMapProps) {
       setTimeout(() => {
         if (!map.current) return;
         map.current.resize();
-        map.current.fitBounds(bounds, { padding: 50, duration: 0 });
+        map.current.fitBounds(bounds, { padding: 20, duration: 0 });
       }, 100);
     }
   }, [assignedGisData, mapLoaded]);
@@ -186,8 +186,8 @@ export function ModelBuilderMap({ assignedGisData }: ModelBuilderMapProps) {
   const assignedElementsCount = Object.keys(assignedGisData).length;
 
   return (
-    <div className="space-y-4 h-full flex flex-col">
-      <div className="flex justify-between items-center flex-shrink-0">
+    <div className="h-full flex flex-col">
+      <div className="flex justify-between items-center mb-4 flex-shrink-0">
         <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
           Network Preview
         </h2>
@@ -196,7 +196,7 @@ export function ModelBuilderMap({ assignedGisData }: ModelBuilderMapProps) {
         </div>
       </div>
 
-      <div className="relative h-96 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 flex-shrink-0">
+      <div className="relative flex-1 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
         {MAPBOX_TOKEN === "pk.placeholder.token" ? (
           <div className="absolute inset-0 flex items-center justify-center bg-slate-100 dark:bg-slate-700">
             <div className="text-center p-6">
@@ -213,14 +213,11 @@ export function ModelBuilderMap({ assignedGisData }: ModelBuilderMapProps) {
         )}
       </div>
 
-      {/* Legend */}
+      {/* Legend - Only show if there are assignments and space allows */}
       {assignedElementsCount > 0 && (
-        <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700 flex-shrink-0">
-          <h3 className="text-sm font-medium text-slate-900 dark:text-white mb-2">
-            Legend
-          </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {Object.entries(assignedGisData).map(([elementType, geoJSON]) => {
+        <div className="mt-3 p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 flex-shrink-0">
+          <div className="grid grid-cols-2 gap-2">
+            {Object.entries(assignedGisData).slice(0, 4).map(([elementType, geoJSON]) => {
               if (!geoJSON) return null;
               
               const color = ELEMENT_COLORS[elementType as keyof typeof ELEMENT_COLORS] || '#3b82f6';
@@ -229,15 +226,20 @@ export function ModelBuilderMap({ assignedGisData }: ModelBuilderMapProps) {
               return (
                 <div key={elementType} className="flex items-center space-x-2">
                   <div 
-                    className="w-3 h-3 rounded-full"
+                    className="w-2 h-2 rounded-full flex-shrink-0"
                     style={{ backgroundColor: color }}
                   />
-                  <span className="text-sm text-slate-700 dark:text-slate-300">
+                  <span className="text-xs text-slate-700 dark:text-slate-300 truncate">
                     {elementName} ({geoJSON.features.length})
                   </span>
                 </div>
               );
             })}
+            {assignedElementsCount > 4 && (
+              <div className="text-xs text-slate-500 dark:text-slate-400 col-span-2 text-center">
+                +{assignedElementsCount - 4} more...
+              </div>
+            )}
           </div>
         </div>
       )}
