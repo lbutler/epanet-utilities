@@ -291,38 +291,28 @@ export function ModelBuilderMap({
       {/* Legend - Only show if there are assignments and space allows */}
       {assignedElementsCount > 0 && (
         <div className="mt-3 p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 flex-shrink-0">
-          <div className="grid grid-cols-2 gap-2">
-            {Object.entries(assignedGisData)
-              .slice(0, 4)
-              .map(([elementType, geoJSON]) => {
-                if (!geoJSON) return null;
+          <div className="grid grid-cols-3 gap-2">
+            {Object.entries(assignedGisData).map(([elementType, geoJSON]) => {
+              if (!geoJSON) return null;
 
-                const color =
-                  ELEMENT_COLORS[elementType as keyof typeof ELEMENT_COLORS] ||
-                  "#3b82f6";
-                const elementName =
-                  elementType.charAt(0).toUpperCase() + elementType.slice(1);
+              const color =
+                ELEMENT_COLORS[elementType as keyof typeof ELEMENT_COLORS] ||
+                "#3b82f6";
+              const elementName =
+                elementType.charAt(0).toUpperCase() + elementType.slice(1);
 
-                return (
+              return (
+                <div key={elementType} className="flex items-center space-x-2">
                   <div
-                    key={elementType}
-                    className="flex items-center space-x-2"
-                  >
-                    <div
-                      className="w-2 h-2 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: color }}
-                    />
-                    <span className="text-xs text-slate-700 dark:text-slate-300 truncate">
-                      {elementName} ({geoJSON.features.length})
-                    </span>
-                  </div>
-                );
-              })}
-            {assignedElementsCount > 4 && (
-              <div className="text-xs text-slate-500 dark:text-slate-400 col-span-2 text-center">
-                +{assignedElementsCount - 4} more...
-              </div>
-            )}
+                    className="w-2 h-2 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: color }}
+                  />
+                  <span className="text-xs text-slate-700 dark:text-slate-300 truncate">
+                    {elementName} ({geoJSON.features.length})
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
