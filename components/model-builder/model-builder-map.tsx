@@ -232,7 +232,7 @@ export function ModelBuilderMap({
         new mapboxgl.LngLatBounds(allCoordinates[0], allCoordinates[0]),
       );
 
-      const expandFactor = 0.1;
+      const expandFactor = 1;
       const southWest = bounds.getSouthWest();
       const northEast = bounds.getNorthEast();
 
