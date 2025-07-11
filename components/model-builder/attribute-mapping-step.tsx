@@ -79,8 +79,8 @@ export function AttributeMappingStep({
           Map Attributes
         </h2>
         <p className="text-slate-600 dark:text-slate-400 mb-6">
-          Map the properties from your GeoJSON files to EPANET attributes.
-          Required attributes are marked with an asterisk (*).
+          Map the properties from your GIS data to EPANET attributes. Elevations
+          and connectivity will be calculated automatically.
         </p>
 
         <Tabs defaultValue={firstElementKey} className="w-full">
@@ -130,7 +130,7 @@ export function AttributeMappingStep({
                     {/* Required Attributes */}
                     <div className="space-y-3">
                       <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                        Required Attributes
+                        Recommended Attributes
                       </h4>
                       {element.requiredAttributes.map((attribute) => (
                         <div
@@ -138,7 +138,7 @@ export function AttributeMappingStep({
                           className="flex items-center space-x-3"
                         >
                           <label className="text-sm font-medium text-slate-900 dark:text-white w-20 flex-shrink-0">
-                            {attribute}*
+                            {attribute}
                           </label>
                           <select
                             value={elementMapping[attribute] || ""}

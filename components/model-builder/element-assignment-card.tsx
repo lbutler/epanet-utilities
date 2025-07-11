@@ -305,10 +305,10 @@ export function ElementAssignmentCard({
             {/* Drag and Drop Area */}
             <div className="text-center border-t border-slate-200 dark:border-slate-700 pt-4">
               <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">
-                Or drag and drop GeoJSON file here
+                Or drag and drop a GIS file here
               </p>
               <p className="text-xs text-slate-500 dark:text-slate-500 mb-1">
-                From computer or uploaded files
+                from your computer or loaded files
               </p>
               <p className="text-xs text-slate-500 dark:text-slate-500">
                 Accepts: {validGeometryTypes.join(", ")}

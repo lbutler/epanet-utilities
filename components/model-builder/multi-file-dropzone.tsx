@@ -126,7 +126,7 @@ export function MultiFileDropzone({
       <div className="flex flex-col h-full">
         <div className="flex items-center justify-between mb-4 flex-shrink-0">
           <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
-            Uploaded Files ({uploadedFiles.length})
+            Unassigned Files ({uploadedFiles.length})
           </h2>
           <div className="relative">
             <input
@@ -197,7 +197,7 @@ export function MultiFileDropzone({
   return (
     <div className="flex flex-col h-full">
       <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4 flex-shrink-0">
-        Upload GeoJSON Files
+        Load GIS Files
       </h2>
 
       <div
