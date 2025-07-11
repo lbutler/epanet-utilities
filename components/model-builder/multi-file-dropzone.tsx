@@ -8,9 +8,14 @@ import { getValidGeometryType } from "@/lib/model-builder-constants";
 interface MultiFileDropzoneProps {
   onFilesLoaded: (files: UploadedFile[]) => void;
   uploadedFiles: UploadedFile[];
+  compact?: boolean;
 }
 
-export function MultiFileDropzone({ onFilesLoaded, uploadedFiles }: MultiFileDropzoneProps) {
+export function MultiFileDropzone({
+  onFilesLoaded,
+  uploadedFiles,
+  compact = false,
+}: MultiFileDropzoneProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -27,7 +32,7 @@ export function MultiFileDropzone({ onFilesLoaded, uploadedFiles }: MultiFileDro
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    
+
     const files = Array.from(e.dataTransfer.files);
     processFiles(files);
   };
@@ -49,9 +54,10 @@ export function MultiFileDropzone({ onFilesLoaded, uploadedFiles }: MultiFileDro
     for (const file of files) {
       try {
         // Check file extension
-        const isGeoJSON = file.name.toLowerCase().endsWith('.geojson') || 
-                         file.name.toLowerCase().endsWith('.json');
-        
+        const isGeoJSON =
+          file.name.toLowerCase().endsWith(".geojson") ||
+          file.name.toLowerCase().endsWith(".json");
+
         if (!isGeoJSON) {
           errors.push(`${file.name}: Only GeoJSON files are supported`);
           continue;
@@ -62,7 +68,11 @@ export function MultiFileDropzone({ onFilesLoaded, uploadedFiles }: MultiFileDro
         const geoJSON = JSON.parse(content);
 
         // Validate GeoJSON structure
-        if (!geoJSON || geoJSON.type !== 'FeatureCollection' || !Array.isArray(geoJSON.features)) {
+        if (
+          !geoJSON ||
+          geoJSON.type !== "FeatureCollection" ||
+          !Array.isArray(geoJSON.features)
+        ) {
           errors.push(`${file.name}: Invalid GeoJSON structure`);
           continue;
         }
@@ -74,24 +84,30 @@ export function MultiFileDropzone({ onFilesLoaded, uploadedFiles }: MultiFileDro
 
         // Create UploadedFile object
         const uploadedFile: UploadedFile = {
-          id: `${file.name}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          id: `${file.name}_${Date.now()}_${Math.random()
+            .toString(36)
+            .substr(2, 9)}`,
           file,
           geoJSON,
           name: file.name,
           geometryType: getValidGeometryType(geoJSON),
-          featureCount: geoJSON.features.length
+          featureCount: geoJSON.features.length,
         };
 
         validFiles.push(uploadedFile);
       } catch (err) {
-        errors.push(`${file.name}: Failed to parse file - ${err instanceof Error ? err.message : 'Unknown error'}`);
+        errors.push(
+          `${file.name}: Failed to parse file - ${
+            err instanceof Error ? err.message : "Unknown error"
+          }`,
+        );
       }
     }
 
     setIsProcessing(false);
 
     if (errors.length > 0) {
-      setError(errors.join('; '));
+      setError(errors.join("; "));
     }
 
     if (validFiles.length > 0) {
@@ -100,9 +116,83 @@ export function MultiFileDropzone({ onFilesLoaded, uploadedFiles }: MultiFileDro
   };
 
   const removeFile = (fileId: string) => {
-    const updatedFiles = uploadedFiles.filter(f => f.id !== fileId);
+    const updatedFiles = uploadedFiles.filter((f) => f.id !== fileId);
     onFilesLoaded(updatedFiles);
   };
+
+  // Compact mode - show simplified interface when files are already uploaded
+  if (compact && uploadedFiles.length > 0) {
+    return (
+      <div className="flex flex-col h-full">
+        <div className="flex items-center justify-between mb-4 flex-shrink-0">
+          <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+            Uploaded Files ({uploadedFiles.length})
+          </h2>
+          <div className="relative">
+            <input
+              type="file"
+              accept=".geojson,.json"
+              multiple
+              className="hidden"
+              id="compact-file-upload"
+              onChange={handleFileChange}
+              disabled={isProcessing}
+            />
+            <label
+              htmlFor="compact-file-upload"
+              className={`px-3 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md cursor-pointer transition-colors flex items-center space-x-2 ${
+                isProcessing ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+            >
+              <Upload className="h-4 w-4" />
+              <span>{isProcessing ? "Processing..." : "Add Files"}</span>
+            </label>
+          </div>
+        </div>
+
+        {error && (
+          <div className="flex items-center text-red-600 dark:text-red-400 text-sm mb-3 flex-shrink-0">
+            <AlertCircle className="h-4 w-4 mr-1" />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <div className="flex-1 overflow-y-auto space-y-2 pr-2">
+          {uploadedFiles.map((file) => (
+            <div
+              key={file.id}
+              className="flex items-center p-3 bg-slate-50 dark:bg-slate-800 rounded-md"
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.setData(
+                  "application/json",
+                  JSON.stringify(file),
+                );
+                e.dataTransfer.effectAllowed = "move";
+              }}
+            >
+              <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-3 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
+                  {file.name}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {file.geometryType} • {file.featureCount} features
+                </p>
+              </div>
+              <button
+                onClick={() => removeFile(file.id)}
+                className="ml-4 p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full flex-shrink-0"
+                aria-label="Remove file"
+              >
+                <X className="h-4 w-4 text-slate-500 dark:text-slate-400" />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full">
@@ -149,7 +239,7 @@ export function MultiFileDropzone({ onFilesLoaded, uploadedFiles }: MultiFileDro
                 : "bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             }`}
           >
-            {isProcessing ? 'Processing...' : 'Select Files'}
+            {isProcessing ? "Processing..." : "Select Files"}
           </label>
         </div>
       </div>
@@ -173,8 +263,11 @@ export function MultiFileDropzone({ onFilesLoaded, uploadedFiles }: MultiFileDro
                 className="flex items-center p-3 bg-slate-50 dark:bg-slate-800 rounded-md"
                 draggable
                 onDragStart={(e) => {
-                  e.dataTransfer.setData('application/json', JSON.stringify(file));
-                  e.dataTransfer.effectAllowed = 'move';
+                  e.dataTransfer.setData(
+                    "application/json",
+                    JSON.stringify(file),
+                  );
+                  e.dataTransfer.effectAllowed = "move";
                 }}
               >
                 <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-3 flex-shrink-0" />
