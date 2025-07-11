@@ -57,7 +57,7 @@ export function ModelBuilderMap({ assignedGisData }: ModelBuilderMapProps) {
     if (!map.current || !mapLoaded) return;
 
     // Remove existing layers and sources
-    Object.keys(ELEMENT_COLORS).forEach(elementType => {
+    Object.keys(ELEMENT_COLORS).forEach((elementType) => {
       if (map.current!.getLayer(`${elementType}-points`)) {
         map.current!.removeLayer(`${elementType}-points`);
       }
@@ -83,79 +83,123 @@ export function ModelBuilderMap({ assignedGisData }: ModelBuilderMapProps) {
       return;
     }
 
+    // Process all GeoJSON data for reprojection
+    const geoJSONEntries = Object.entries(assignedGisData);
+    const geoJSONArray = geoJSONEntries.map(([, geoJSON]) => geoJSON);
+
+    // Check if any data needs reprojection
+    const needsReprojection = geoJSONArray.some(
+      (geoJSON) => geoJSON && !isLikelyLatLng(geoJSON),
+    );
+
+    let processedGeoJSONArray: (typeof geoJSONArray)[0][];
+
+    if (needsReprojection) {
+      // Reproject all data together using global min/max values
+      processedGeoJSONArray = approximateReprojectToLatLng(geoJSONArray);
+    } else {
+      // No reprojection needed, use original data
+      processedGeoJSONArray = geoJSONArray;
+    }
+
+    // Create a map from element type to processed GeoJSON
+    const processedGeoJSONMap = geoJSONEntries.reduce(
+      (acc, [elementType], index) => {
+        acc[elementType] = processedGeoJSONArray[index];
+        return acc;
+      },
+      {} as Record<string, (typeof geoJSONArray)[0]>,
+    );
+
     // Add sources and layers for each assigned element
     const allCoordinates: [number, number][] = [];
 
-    Object.entries(assignedGisData).forEach(([elementType, geoJSON]) => {
-      if (!geoJSON) return;
+    Object.entries(processedGeoJSONMap).forEach(
+      ([elementType, processedGeoJSON]) => {
+        if (!processedGeoJSON) return;
 
-      // Process the GeoJSON data
-      let processedGeoJSON = geoJSON;
-      
-      // Check if coordinates need to be reprojected
-      if (!isLikelyLatLng(geoJSON)) {
-        processedGeoJSON = approximateReprojectToLatLng(geoJSON);
-      }
-
-      // Add source
-      map.current!.addSource(elementType, {
-        type: "geojson",
-        data: processedGeoJSON,
-      });
-
-      const color = ELEMENT_COLORS[elementType as keyof typeof ELEMENT_COLORS] || '#3b82f6';
-
-      // Add line layer for linear features (only pipes now)
-      if (elementType === 'pipes') {
-        map.current!.addLayer({
-          id: `${elementType}-lines`,
-          type: "line",
-          source: elementType,
-          paint: {
-            "line-color": color,
-            "line-width": ["interpolate", ["linear"], ["zoom"], 12, 2, 16, 6],
-          },
+        // Add source
+        map.current!.addSource(elementType, {
+          type: "geojson",
+          data: processedGeoJSON,
         });
-      }
 
-      // Add point layer for point features (all except pipes)
-      if (elementType !== 'pipes') {
-        map.current!.addLayer({
-          id: `${elementType}-points`,
-          type: "circle",
-          source: elementType,
-          paint: {
-            "circle-radius": ["interpolate", ["linear"], ["zoom"], 12, 3, 16, 8],
-            "circle-color": color,
-            "circle-stroke-width": [
-              "interpolate", ["linear"], ["zoom"], 13, 1, 16, 2
-            ],
-            "circle-stroke-color": "#ffffff",
-          },
-        });
-      }
+        const color =
+          ELEMENT_COLORS[elementType as keyof typeof ELEMENT_COLORS] ||
+          "#3b82f6";
 
-      // Collect coordinates for bounds calculation
-      processedGeoJSON.features.forEach((feature: any) => {
-        if (feature.geometry.type === "Point") {
-          allCoordinates.push(feature.geometry.coordinates as [number, number]);
-        } else if (feature.geometry.type === "LineString") {
-          allCoordinates.push(...(feature.geometry.coordinates as [number, number][]));
-        } else if (feature.geometry.type === "MultiPoint") {
-          allCoordinates.push(...(feature.geometry.coordinates as [number, number][]));
-        } else if (feature.geometry.type === "MultiLineString") {
-          feature.geometry.coordinates.forEach((line: any) => {
-            allCoordinates.push(...(line as [number, number][]));
+        // Add line layer for linear features (only pipes now)
+        if (elementType === "pipes") {
+          map.current!.addLayer({
+            id: `${elementType}-lines`,
+            type: "line",
+            source: elementType,
+            paint: {
+              "line-color": color,
+              "line-width": ["interpolate", ["linear"], ["zoom"], 12, 2, 16, 6],
+            },
           });
         }
-      });
-    });
+
+        // Add point layer for point features (all except pipes)
+        if (elementType !== "pipes") {
+          map.current!.addLayer({
+            id: `${elementType}-points`,
+            type: "circle",
+            source: elementType,
+            paint: {
+              "circle-radius": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                12,
+                3,
+                16,
+                8,
+              ],
+              "circle-color": color,
+              "circle-stroke-width": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                13,
+                1,
+                16,
+                2,
+              ],
+              "circle-stroke-color": "#ffffff",
+            },
+          });
+        }
+
+        // Collect coordinates for bounds calculation
+        processedGeoJSON.features.forEach((feature: any) => {
+          if (feature.geometry.type === "Point") {
+            allCoordinates.push(
+              feature.geometry.coordinates as [number, number],
+            );
+          } else if (feature.geometry.type === "LineString") {
+            allCoordinates.push(
+              ...(feature.geometry.coordinates as [number, number][]),
+            );
+          } else if (feature.geometry.type === "MultiPoint") {
+            allCoordinates.push(
+              ...(feature.geometry.coordinates as [number, number][]),
+            );
+          } else if (feature.geometry.type === "MultiLineString") {
+            feature.geometry.coordinates.forEach((line: any) => {
+              allCoordinates.push(...(line as [number, number][]));
+            });
+          }
+        });
+      },
+    );
 
     // Fit map bounds to show all data
     if (allCoordinates.length > 0) {
       const bounds = allCoordinates.reduce(
         (bounds, coord) => bounds.extend(coord as mapboxgl.LngLatLike),
-        new mapboxgl.LngLatBounds(allCoordinates[0], allCoordinates[0])
+        new mapboxgl.LngLatBounds(allCoordinates[0], allCoordinates[0]),
       );
 
       const expandFactor = 0.1;
@@ -170,7 +214,7 @@ export function ModelBuilderMap({ assignedGisData }: ModelBuilderMapProps) {
         [
           northEast.lng + expandFactor * (northEast.lng - southWest.lng),
           northEast.lat + expandFactor * (northEast.lat - southWest.lat),
-        ]
+        ],
       );
 
       map.current.setMaxBounds(expandedBounds);
@@ -192,7 +236,8 @@ export function ModelBuilderMap({ assignedGisData }: ModelBuilderMapProps) {
           Network Preview
         </h2>
         <div className="text-sm text-slate-600 dark:text-slate-400">
-          {assignedElementsCount} element{assignedElementsCount !== 1 ? 's' : ''} assigned
+          {assignedElementsCount} element
+          {assignedElementsCount !== 1 ? "s" : ""} assigned
         </div>
       </div>
 
@@ -217,24 +262,32 @@ export function ModelBuilderMap({ assignedGisData }: ModelBuilderMapProps) {
       {assignedElementsCount > 0 && (
         <div className="mt-3 p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 flex-shrink-0">
           <div className="grid grid-cols-2 gap-2">
-            {Object.entries(assignedGisData).slice(0, 4).map(([elementType, geoJSON]) => {
-              if (!geoJSON) return null;
-              
-              const color = ELEMENT_COLORS[elementType as keyof typeof ELEMENT_COLORS] || '#3b82f6';
-              const elementName = elementType.charAt(0).toUpperCase() + elementType.slice(1);
-              
-              return (
-                <div key={elementType} className="flex items-center space-x-2">
-                  <div 
-                    className="w-2 h-2 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: color }}
-                  />
-                  <span className="text-xs text-slate-700 dark:text-slate-300 truncate">
-                    {elementName} ({geoJSON.features.length})
-                  </span>
-                </div>
-              );
-            })}
+            {Object.entries(assignedGisData)
+              .slice(0, 4)
+              .map(([elementType, geoJSON]) => {
+                if (!geoJSON) return null;
+
+                const color =
+                  ELEMENT_COLORS[elementType as keyof typeof ELEMENT_COLORS] ||
+                  "#3b82f6";
+                const elementName =
+                  elementType.charAt(0).toUpperCase() + elementType.slice(1);
+
+                return (
+                  <div
+                    key={elementType}
+                    className="flex items-center space-x-2"
+                  >
+                    <div
+                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: color }}
+                    />
+                    <span className="text-xs text-slate-700 dark:text-slate-300 truncate">
+                      {elementName} ({geoJSON.features.length})
+                    </span>
+                  </div>
+                );
+              })}
             {assignedElementsCount > 4 && (
               <div className="text-xs text-slate-500 dark:text-slate-400 col-span-2 text-center">
                 +{assignedElementsCount - 4} more...

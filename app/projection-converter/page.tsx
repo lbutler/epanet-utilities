@@ -16,20 +16,20 @@ import { toast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 
 import { isLikelyLatLng } from "@/lib/check-projection";
-import { approximateReprojectToLatLng } from "@/lib/approx-reproject";
+import { approximateReprojectToLatLngSingle } from "@/lib/approx-reproject";
 
 import { toGeoJson, ToGeoJsonResult } from "@/lib/epanet-geojson";
 
 export default function Home() {
   const [networkData, setNetworkData] = useState<NetworkData | null>(null);
   const [epanetGeoJson, setEpanetGeoJson] = useState<ToGeoJsonResult | null>(
-    null
+    null,
   );
   const [sourceProjection, setSourceProjection] = useState<Projection | null>(
-    null
+    null,
   );
   const [targetProjection, setTargetProjection] = useState<Projection | null>(
-    null
+    null,
   );
   const [convertedCoordinates, setConvertedCoordinates] =
     useState<NetworkData | null>(null);
@@ -70,8 +70,8 @@ export default function Home() {
             code: "+proj=longlat +datum=WGS84 +no_defs",
           });
         } else {
-          const approxGeojson = approximateReprojectToLatLng(
-            modelGeojson.geojson
+          const approxGeojson = approximateReprojectToLatLngSingle(
+            modelGeojson.geojson,
           );
           setMapData(approxGeojson);
           setTargetProjection({
@@ -107,7 +107,7 @@ export default function Home() {
     if (epanetGeoJson && projection && projection.id !== "EPSG:4326") {
       const wgs84Coords = convertGeoJsonToWGS84(
         epanetGeoJson?.geojson,
-        projection.code
+        projection.code,
       );
       if (isLikelyLatLng(wgs84Coords)) {
         setMapData(wgs84Coords);
@@ -132,7 +132,7 @@ export default function Home() {
       const convertedNetworkData = convertCoordinates(
         networkData,
         sourceProjection.code,
-        targetProjection.code
+        targetProjection.code,
       );
       setConvertedCoordinates(convertedNetworkData);
     } catch (error) {
@@ -163,7 +163,7 @@ export default function Home() {
     const newContent = updateINPWithReprojectedData(
       networkData.inp,
       convertedCoordinates,
-      numberOfDecimals
+      numberOfDecimals,
     );
 
     // Create and trigger download
