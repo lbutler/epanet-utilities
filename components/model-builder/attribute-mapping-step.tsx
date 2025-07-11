@@ -3,13 +3,20 @@
 import { ChevronLeft, Download } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { AssignedGisData, AttributeMapping } from "@/lib/types";
-import { EPANET_ELEMENTS, getGeoJSONProperties } from "@/lib/model-builder-constants";
+import {
+  EPANET_ELEMENTS,
+  getGeoJSONProperties,
+} from "@/lib/model-builder-constants";
 import { DataTable } from "./data-table";
 
 interface AttributeMappingStepProps {
   assignedGisData: AssignedGisData;
   attributeMapping: AttributeMapping;
-  onAttributeMappingChange: (elementType: string, attribute: string, propertyName: string | null) => void;
+  onAttributeMappingChange: (
+    elementType: string,
+    attribute: string,
+    propertyName: string | null,
+  ) => void;
   onPrevious: () => void;
   onBuildModel: () => void;
 }
@@ -19,16 +26,27 @@ export function AttributeMappingStep({
   attributeMapping,
   onAttributeMappingChange,
   onPrevious,
-  onBuildModel
+  onBuildModel,
 }: AttributeMappingStepProps) {
-  const assignedElements = Object.keys(assignedGisData).filter(key => assignedGisData[key as keyof AssignedGisData]);
+  const elementOrder = [
+    "pipes",
+    "tanks",
+    "reservoirs",
+    "nodes",
+    "valves",
+    "pumps",
+  ];
+  const assignedElements = elementOrder.filter(
+    (key) => assignedGisData[key as keyof AssignedGisData],
+  );
   const firstElementKey = assignedElements[0];
 
   if (assignedElements.length === 0) {
     return (
       <div className="text-center py-12">
         <p className="text-slate-500 dark:text-slate-400">
-          No elements have been assigned. Please go back and assign files to elements.
+          No elements have been assigned. Please go back and assign files to
+          elements.
         </p>
       </div>
     );
@@ -61,17 +79,24 @@ export function AttributeMappingStep({
           Map Attributes
         </h2>
         <p className="text-slate-600 dark:text-slate-400 mb-6">
-          Map the properties from your GeoJSON files to EPANET attributes. Required attributes are marked with an asterisk (*).
+          Map the properties from your GeoJSON files to EPANET attributes.
+          Required attributes are marked with an asterisk (*).
         </p>
 
         <Tabs defaultValue={firstElementKey} className="w-full">
           <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 mb-6">
             {assignedElements.map((elementKey) => {
-              const element = EPANET_ELEMENTS.find(e => e.key === elementKey);
-              const featureCount = assignedGisData[elementKey as keyof AssignedGisData]?.features?.length || 0;
-              
+              const element = EPANET_ELEMENTS.find((e) => e.key === elementKey);
+              const featureCount =
+                assignedGisData[elementKey as keyof AssignedGisData]?.features
+                  ?.length || 0;
+
               return (
-                <TabsTrigger key={elementKey} value={elementKey} className="text-xs sm:text-sm">
+                <TabsTrigger
+                  key={elementKey}
+                  value={elementKey}
+                  className="text-xs sm:text-sm"
+                >
                   {element?.name} ({featureCount})
                 </TabsTrigger>
               );
@@ -79,21 +104,28 @@ export function AttributeMappingStep({
           </TabsList>
 
           {assignedElements.map((elementKey) => {
-            const element = EPANET_ELEMENTS.find(e => e.key === elementKey);
-            const geoJSON = assignedGisData[elementKey as keyof AssignedGisData];
-            const availableProperties = geoJSON ? getGeoJSONProperties(geoJSON) : [];
+            const element = EPANET_ELEMENTS.find((e) => e.key === elementKey);
+            const geoJSON =
+              assignedGisData[elementKey as keyof AssignedGisData];
+            const availableProperties = geoJSON
+              ? getGeoJSONProperties(geoJSON)
+              : [];
             const elementMapping = attributeMapping[elementKey] || {};
 
             if (!element || !geoJSON) return null;
 
             return (
-              <TabsContent key={elementKey} value={elementKey} className="space-y-6">
+              <TabsContent
+                key={elementKey}
+                value={elementKey}
+                className="space-y-6"
+              >
                 {/* Attribute Mapping Form */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium text-slate-900 dark:text-white">
                     {element.name} Attribute Mapping
                   </h3>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Required Attributes */}
                     <div className="space-y-3">
@@ -101,14 +133,21 @@ export function AttributeMappingStep({
                         Required Attributes
                       </h4>
                       {element.requiredAttributes.map((attribute) => (
-                        <div key={attribute} className="flex items-center space-x-3">
+                        <div
+                          key={attribute}
+                          className="flex items-center space-x-3"
+                        >
                           <label className="text-sm font-medium text-slate-900 dark:text-white w-20 flex-shrink-0">
                             {attribute}*
                           </label>
                           <select
-                            value={elementMapping[attribute] || ''}
-                            onChange={(e) => 
-                              onAttributeMappingChange(elementKey, attribute, e.target.value || null)
+                            value={elementMapping[attribute] || ""}
+                            onChange={(e) =>
+                              onAttributeMappingChange(
+                                elementKey,
+                                attribute,
+                                e.target.value || null,
+                              )
                             }
                             className="flex-1 px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                           >
@@ -129,14 +168,21 @@ export function AttributeMappingStep({
                         Optional Attributes
                       </h4>
                       {element.optionalAttributes.map((attribute) => (
-                        <div key={attribute} className="flex items-center space-x-3">
+                        <div
+                          key={attribute}
+                          className="flex items-center space-x-3"
+                        >
                           <label className="text-sm font-medium text-slate-900 dark:text-white w-20 flex-shrink-0">
                             {attribute}
                           </label>
                           <select
-                            value={elementMapping[attribute] || ''}
-                            onChange={(e) => 
-                              onAttributeMappingChange(elementKey, attribute, e.target.value || null)
+                            value={elementMapping[attribute] || ""}
+                            onChange={(e) =>
+                              onAttributeMappingChange(
+                                elementKey,
+                                attribute,
+                                e.target.value || null,
+                              )
                             }
                             className="flex-1 px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                           >

@@ -139,7 +139,12 @@ export function ModelBuilderMap({
     // Add sources and layers for each assigned element
     const allCoordinates: [number, number][] = [];
 
-    Object.entries(processedGeoJSONMap).forEach(
+    // Handle pipes first if they exist
+    const entries = Object.entries(processedGeoJSONMap);
+    const pipesEntry = entries.find(([type]) => type === "pipes");
+    const otherEntries = entries.filter(([type]) => type !== "pipes");
+
+    [...(pipesEntry ? [pipesEntry] : []), ...otherEntries].forEach(
       ([elementType, processedGeoJSON]) => {
         if (!processedGeoJSON) return;
 
