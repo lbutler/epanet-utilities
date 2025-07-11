@@ -5,11 +5,13 @@ import type {
   UploadedFile,
   AssignedGisData,
   EpanetElementType,
+  Projection,
 } from "@/lib/types";
 import { EPANET_ELEMENTS } from "@/lib/model-builder-constants";
 import { MultiFileDropzone } from "./multi-file-dropzone";
 import { ElementAssignmentCard } from "./element-assignment-card";
 import { ModelBuilderMap } from "./model-builder-map";
+import { ProjectionInputSearch } from "@/components/projection-input-search";
 
 interface DataAssignmentStepProps {
   uploadedFiles: UploadedFile[];
@@ -21,6 +23,11 @@ interface DataAssignmentStepProps {
   ) => void;
   onFileUnassignment: (elementType: EpanetElementType) => void;
   onNext: () => void;
+  projections: Projection[];
+  loadingProjections: boolean;
+  selectedProjection: Projection | null;
+  onProjectionSelect: (projection: Projection | null) => void;
+  needsReprojection: boolean;
 }
 
 export function DataAssignmentStep({
@@ -30,6 +37,11 @@ export function DataAssignmentStep({
   onFileAssignment,
   onFileUnassignment,
   onNext,
+  projections,
+  loadingProjections,
+  selectedProjection,
+  onProjectionSelect,
+  needsReprojection,
 }: DataAssignmentStepProps) {
   const hasAssignedFiles = Object.keys(assignedGisData).length > 0;
 
@@ -44,6 +56,38 @@ export function DataAssignmentStep({
             uploadedFiles={uploadedFiles}
             compact={uploadedFiles.length > 0}
           />
+
+          {/* Projection Input - Show when files are uploaded and reprojection is needed */}
+          {(uploadedFiles.length > 0 || hasAssignedFiles) &&
+            needsReprojection && (
+              <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium text-slate-900 dark:text-white">
+                      Projection Required
+                    </h3>
+                    {selectedProjection && (
+                      <div className="text-xs text-green-600 dark:text-green-400">
+                        ✓ Selected
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-600 dark:text-slate-400">
+                    Your data appears to be in a projected coordinate system.
+                    Select the projection to display it correctly.
+                  </p>
+                  <div className="mt-2">
+                    <ProjectionInputSearch
+                      value={selectedProjection}
+                      onValueChange={onProjectionSelect}
+                      placeholder="Search for projection..."
+                      projections={projections}
+                      loading={loadingProjections}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
         </div>
 
         {/* Network Preview Section */}
@@ -99,21 +143,30 @@ export function DataAssignmentStep({
 
         {/* Next Button */}
         <div className="flex justify-end pt-4 border-t border-slate-200 dark:border-slate-700">
-          <button
-            onClick={onNext}
-            disabled={!hasAssignedFiles}
-            className={`
-              flex items-center space-x-2 px-6 py-3 rounded-lg font-medium transition-colors
-              ${
-                hasAssignedFiles
-                  ? "bg-blue-600 hover:bg-blue-700 text-white"
-                  : "bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed"
+          <div className="flex flex-col items-end space-y-2">
+            {needsReprojection && !selectedProjection && hasAssignedFiles && (
+              <div className="text-sm text-amber-600 dark:text-amber-400">
+                ⚠️ Projection required to continue
+              </div>
+            )}
+            <button
+              onClick={onNext}
+              disabled={
+                !hasAssignedFiles || (needsReprojection && !selectedProjection)
               }
-            `}
-          >
-            <span>Next: Map Attributes</span>
-            <ChevronRight className="h-4 w-4" />
-          </button>
+              className={`
+                flex items-center space-x-2 px-6 py-3 rounded-lg font-medium transition-colors
+                ${
+                  hasAssignedFiles && (!needsReprojection || selectedProjection)
+                    ? "bg-blue-600 hover:bg-blue-700 text-white"
+                    : "bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed"
+                }
+              `}
+            >
+              <span>Next: Map Attributes</span>
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
