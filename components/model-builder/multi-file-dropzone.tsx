@@ -151,9 +151,17 @@ export function MultiFileDropzone({
         </div>
 
         {error && (
-          <div className="flex items-center text-red-600 dark:text-red-400 text-sm mb-3 flex-shrink-0">
-            <AlertCircle className="h-4 w-4 mr-1" />
-            <span>{error}</span>
+          <div className="flex items-center justify-between text-red-600 dark:text-red-400 text-sm mb-3 flex-shrink-0">
+            <div className="flex items-center">
+              <AlertCircle className="h-4 w-4 mr-1" />
+              <span>{error}</span>
+            </div>
+            <button
+              onClick={() => setError(null)}
+              className="ml-2 p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-full"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
         )}
 

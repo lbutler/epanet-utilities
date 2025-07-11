@@ -51,16 +51,18 @@ export function DataAssignmentStep({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* File Upload Section */}
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 h-[450px] flex flex-col">
-          <MultiFileDropzone
-            onFilesLoaded={onFilesUploaded}
-            uploadedFiles={uploadedFiles}
-            compact={uploadedFiles.length > 0}
-          />
+          <div className="flex-1 min-h-0">
+            <MultiFileDropzone
+              onFilesLoaded={onFilesUploaded}
+              uploadedFiles={uploadedFiles}
+              compact={uploadedFiles.length > 0}
+            />
+          </div>
 
           {/* Projection Input - Show when files are uploaded and reprojection is needed */}
           {(uploadedFiles.length > 0 || hasAssignedFiles) &&
             needsReprojection && (
-              <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+              <div className="flex-shrink-0 mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-medium text-slate-900 dark:text-white">
