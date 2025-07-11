@@ -1,6 +1,13 @@
 import type React from "react";
 import Link from "next/link";
-import { Github, ExternalLink, ArrowRight, Globe, Code } from "lucide-react";
+import {
+  Github,
+  ExternalLink,
+  ArrowRight,
+  Globe,
+  Code,
+  Blocks,
+} from "lucide-react";
 
 // Utility types
 type UtilityType = "internal" | "external";
@@ -27,6 +34,15 @@ const utilities: Utility[] = [
     icon: <Globe className="h-6 w-6" />,
     color: "from-blue-500 to-cyan-500",
   },
+  //{
+  //  id: "model-builder",
+  //  title: "Model Builder",
+  //  description: "Build an EPANET model from GIS data.",
+  //  link: "/model-builder",
+  //  type: "internal",
+  //  icon: <Blocks className="h-6 w-6" />,
+  //  color: "from-green-500 to-cyan-500",
+  //},
   {
     id: "epanet-js",
     title: "EPANET-JS",
