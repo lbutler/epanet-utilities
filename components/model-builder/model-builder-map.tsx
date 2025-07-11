@@ -187,7 +187,7 @@ export function ModelBuilderMap({ assignedGisData }: ModelBuilderMapProps) {
 
   return (
     <div className="space-y-4 h-full flex flex-col">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-shrink-0">
         <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
           Network Preview
         </h2>
@@ -196,7 +196,7 @@ export function ModelBuilderMap({ assignedGisData }: ModelBuilderMapProps) {
         </div>
       </div>
 
-      <div className="relative flex-1 min-h-[400px] lg:min-h-[600px] rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+      <div className="relative h-96 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 flex-shrink-0">
         {MAPBOX_TOKEN === "pk.placeholder.token" ? (
           <div className="absolute inset-0 flex items-center justify-center bg-slate-100 dark:bg-slate-700">
             <div className="text-center p-6">
@@ -215,7 +215,7 @@ export function ModelBuilderMap({ assignedGisData }: ModelBuilderMapProps) {
 
       {/* Legend */}
       {assignedElementsCount > 0 && (
-        <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700">
+        <div className="bg-white dark:bg-slate-800 p-4 rounded-lg border border-slate-200 dark:border-slate-700 flex-shrink-0">
           <h3 className="text-sm font-medium text-slate-900 dark:text-white mb-2">
             Legend
           </h3>

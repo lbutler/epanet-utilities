@@ -64,6 +64,7 @@ export function DataAssignmentStep({
                   elementType={element.key}
                   elementName={element.name}
                   assignedFile={assignedFile}
+                  uploadedFiles={uploadedFiles}
                   onAssign={onFileAssignment}
                   onUnassign={onFileUnassignment}
                   validGeometryTypes={element.geometryTypes}
