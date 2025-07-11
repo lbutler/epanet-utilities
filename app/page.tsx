@@ -35,10 +35,10 @@ const utilities: Utility[] = [
     color: "from-blue-500 to-cyan-500",
   },
   {
-    id: "model-build",
+    id: "model-builder",
     title: "Model Builder",
     description: "Build an EPANET model from GIS data.",
-    link: "/model-build",
+    link: "/model-builder",
     type: "internal",
     icon: <Blocks className="h-6 w-6" />,
     color: "from-green-500 to-cyan-500",

@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: "Build an EPANET model from GIS data.",
 };
 
-export default function ModelBuildLayout({
+export default function ModelerBuildLayout({
   children,
 }: {
   children: React.ReactNode;

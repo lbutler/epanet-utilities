@@ -2,8 +2,8 @@
 
 import React from "react";
 
-const ModelBuildPage = () => {
+const ModelerBuildPage = () => {
   return <div>Model Builder</div>;
 };
 
-export default ModelBuildPage;
+export default ModelerBuildPage;
