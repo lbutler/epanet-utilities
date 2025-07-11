@@ -39,12 +39,12 @@ function findMinXY(geometry: Geometry): [number, number] {
     case "MultiLineString":
     case "Polygon":
       (geometry.coordinates as [number, number][][]).forEach((line) =>
-        line.forEach(updateMin)
+        line.forEach(updateMin),
       );
       break;
     case "MultiPolygon":
       (geometry.coordinates as [number, number][][][]).forEach((polygon) =>
-        polygon.forEach((ring) => ring.forEach(updateMin))
+        polygon.forEach((ring) => ring.forEach(updateMin)),
       );
       break;
     case "GeometryCollection":
@@ -60,6 +60,36 @@ function findMinXY(geometry: Geometry): [number, number] {
 }
 
 /**
+ * Finds the global minimum x and y values across multiple GeoJSON objects.
+ */
+function findGlobalMinXY(
+  geojsonArray: (FeatureCollection | Feature | null)[],
+): [number, number] {
+  let globalMinX = Number.POSITIVE_INFINITY;
+  let globalMinY = Number.POSITIVE_INFINITY;
+
+  geojsonArray.forEach((geojson) => {
+    if (!geojson) return;
+
+    if (geojson.type === "FeatureCollection") {
+      geojson.features.forEach((feature) => {
+        if (feature.geometry) {
+          const [minX, minY] = findMinXY(feature.geometry);
+          if (minX < globalMinX) globalMinX = minX;
+          if (minY < globalMinY) globalMinY = minY;
+        }
+      });
+    } else if (geojson.type === "Feature" && geojson.geometry) {
+      const [minX, minY] = findMinXY(geojson.geometry);
+      if (minX < globalMinX) globalMinX = minX;
+      if (minY < globalMinY) globalMinY = minY;
+    }
+  });
+
+  return [globalMinX, globalMinY];
+}
+
+/**
  * Converts a coordinate from local x, y (in meters or feet) to approximate lat/lon.
  */
 function convertCoord(
@@ -67,7 +97,7 @@ function convertCoord(
   minX: number,
   minY: number,
   units: "meters" | "feet",
-  origin: [number, number]
+  origin: [number, number],
 ): [number, number] {
   const METERS_PER_DEGREE = 111320; // Approximate conversion at the equator
   const toMetersFactor = units === "feet" ? 0.3048 : 1.0;
@@ -90,7 +120,7 @@ function transformGeometry(
   minX: number,
   minY: number,
   units: "meters" | "feet",
-  origin: [number, number]
+  origin: [number, number],
 ): Geometry {
   switch (geometry.type) {
     case "Point":
@@ -101,21 +131,21 @@ function transformGeometry(
           minX,
           minY,
           units,
-          origin
+          origin,
         ),
       } as Point;
     case "MultiPoint":
       return {
         type: "MultiPoint",
         coordinates: (geometry.coordinates as [number, number][]).map((coord) =>
-          convertCoord(coord, minX, minY, units, origin)
+          convertCoord(coord, minX, minY, units, origin),
         ),
       } as MultiPoint;
     case "LineString":
       return {
         type: "LineString",
         coordinates: (geometry.coordinates as [number, number][]).map((coord) =>
-          convertCoord(coord, minX, minY, units, origin)
+          convertCoord(coord, minX, minY, units, origin),
         ),
       } as LineString;
     case "MultiLineString":
@@ -123,7 +153,7 @@ function transformGeometry(
         type: "MultiLineString",
         coordinates: (geometry.coordinates as [number, number][][]).map(
           (line) =>
-            line.map((coord) => convertCoord(coord, minX, minY, units, origin))
+            line.map((coord) => convertCoord(coord, minX, minY, units, origin)),
         ),
       } as MultiLineString;
     case "Polygon":
@@ -131,7 +161,7 @@ function transformGeometry(
         type: "Polygon",
         coordinates: (geometry.coordinates as [number, number][][]).map(
           (ring) =>
-            ring.map((coord) => convertCoord(coord, minX, minY, units, origin))
+            ring.map((coord) => convertCoord(coord, minX, minY, units, origin)),
         ),
       } as Polygon;
     case "MultiPolygon":
@@ -141,16 +171,16 @@ function transformGeometry(
           (polygon) =>
             polygon.map((ring) =>
               ring.map((coord) =>
-                convertCoord(coord, minX, minY, units, origin)
-              )
-            )
+                convertCoord(coord, minX, minY, units, origin),
+              ),
+            ),
         ),
       } as MultiPolygon;
     case "GeometryCollection":
       return {
         type: "GeometryCollection",
         geometries: geometry.geometries.map((g) =>
-          transformGeometry(g, minX, minY, units, origin)
+          transformGeometry(g, minX, minY, units, origin),
         ),
       };
     default:
@@ -159,34 +189,26 @@ function transformGeometry(
 }
 
 /**
- * Converts a GeoJSON FeatureCollection or Feature to approximate lat/lon.
+ * Transforms a single GeoJSON object using provided global min values.
  */
-export function approximateReprojectToLatLng<
-  T extends FeatureCollection | Feature
->(geojson: T, options: ApproxReprojectOptions = {}): T {
-  const { units = "meters", origin = [0, 0] } = options;
-
-  let minX: number;
-  let minY: number;
-
-  if (geojson.type === "FeatureCollection") {
-    const minValues = geojson.features
-      .filter((feature) => feature.geometry)
-      .map((feature) => findMinXY(feature.geometry as Geometry));
-
-    minX = minValues.reduce((min, [x]) => Math.min(min, x), Infinity);
-    minY = minValues.reduce((min, [, y]) => Math.min(min, y), Infinity);
-  } else if (geojson.type === "Feature" && geojson.geometry) {
-    [minX, minY] = findMinXY(geojson.geometry);
-  } else {
-    return geojson; // If no valid geometry, return as-is
-  }
-
+function transformGeoJSON<T extends FeatureCollection | Feature>(
+  geojson: T,
+  globalMinX: number,
+  globalMinY: number,
+  units: "meters" | "feet",
+  origin: [number, number],
+): T {
   function transformFeature(feature: Feature): Feature {
     return {
       ...feature,
       geometry: feature.geometry
-        ? transformGeometry(feature.geometry, minX, minY, units, origin)
+        ? transformGeometry(
+            feature.geometry,
+            globalMinX,
+            globalMinY,
+            units,
+            origin,
+          )
         : feature.geometry,
     };
   }
@@ -199,4 +221,46 @@ export function approximateReprojectToLatLng<
   }
 
   return transformFeature(geojson) as T;
+}
+
+/**
+ * Converts multiple GeoJSON objects to approximate lat/lon using global min/max values.
+ * This ensures all datasets are aligned consistently.
+ */
+export function approximateReprojectToLatLng<
+  T extends FeatureCollection | Feature,
+>(
+  geojsonArray: (T | null)[],
+  options: ApproxReprojectOptions = {},
+): (T | null)[] {
+  const { units = "meters", origin = [0, 0] } = options;
+
+  // Filter out null values for processing
+  const validGeojsonArray = geojsonArray.filter(
+    (geojson): geojson is T => geojson !== null,
+  );
+
+  if (validGeojsonArray.length === 0) {
+    return geojsonArray; // Return original array if no valid data
+  }
+
+  // Find global min values across all datasets
+  const [globalMinX, globalMinY] = findGlobalMinXY(validGeojsonArray);
+
+  // Transform each GeoJSON using the global min values
+  return geojsonArray.map((geojson) => {
+    if (!geojson) return null;
+    return transformGeoJSON(geojson, globalMinX, globalMinY, units, origin);
+  });
+}
+
+/**
+ * Convenience function for single GeoJSON objects (backward compatibility).
+ * Wraps the input in an array, processes it, and returns the single result.
+ */
+export function approximateReprojectToLatLngSingle<
+  T extends FeatureCollection | Feature,
+>(geojson: T, options: ApproxReprojectOptions = {}): T {
+  const result = approximateReprojectToLatLng([geojson], options);
+  return result[0] as T;
 }
